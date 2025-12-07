@@ -1,17 +1,12 @@
 import 'package:flutter/material.dart';
+import 'dart:math';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
-import 'dart:math';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-
+/*void main() {
   runApp(const MainApp());
-}
+}*/
 
 class MainApp extends StatelessWidget {
   const MainApp({super.key});
@@ -26,37 +21,40 @@ class MainApp extends StatelessWidget {
 }
 
 class HomePage extends StatelessWidget {
+  
+   
   const HomePage({super.key});
+  
 
   @override
   Widget build(BuildContext context) {
-    int stepCount = Random().nextInt(9000) + 1000;
-
+    int stepCount = Random().nextInt(9000)+1000; // Random step count between 1000 and 9999
     return Scaffold(
       appBar: AppBar(title: const Text("FitnessApp")),
       body: ListView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(24), // spacing
         children: [
           StepCounterBox(
-            steps: stepCount,
+            steps : stepCount,
             color: Colors.blueAccent,
           ),
           const SizedBox(height: 24),
-
-          WaterTrackerBox(color: Colors.cyanAccent),
+          WaterTrackerBox(color: Colors.cyanAccent), // default : counter +
           const SizedBox(height: 24),
 
           NavigationBox(
+            // default : new page
             title: "box 2",
             color: Colors.orangeAccent,
             destination: const DetailPage(title: "box 2"),
           ),
           const SizedBox(height: 24),
 
-          const CounterBox(color: Colors.purpleAccent),
+          const CounterBox(color: Colors.purpleAccent), // default : counter +
           const SizedBox(height: 24),
 
           NavigationBox(
+            // default : new page
             title: "box 3",
             color: Colors.redAccent,
             destination: const DetailPage(title: "box 3"),
@@ -68,6 +66,7 @@ class HomePage extends StatelessWidget {
 }
 
 class NavigationBox extends StatelessWidget {
+  // for the boxes which take you to new / other pages
   final String title;
   final Color color;
   final Widget destination;
@@ -83,8 +82,7 @@ class NavigationBox extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        Navigator.push(
-            context, MaterialPageRoute(builder: (_) => destination));
+        Navigator.push(context, MaterialPageRoute(builder: (_) => destination));
       },
       child: Container(
         height: 170,
@@ -103,6 +101,7 @@ class NavigationBox extends StatelessWidget {
 }
 
 class CounterBox extends StatefulWidget {
+  // for the boxes with counters inside
   final Color color;
 
   const CounterBox({super.key, required this.color});
@@ -146,6 +145,7 @@ class _CounterBoxState extends State<CounterBox> {
 }
 
 class DetailPage extends StatelessWidget {
+  // for navigation
   final String title;
 
   const DetailPage({super.key, required this.title});
@@ -163,22 +163,17 @@ class DetailPage extends StatelessWidget {
     );
   }
 }
-
-class StepCounterBox extends StatelessWidget {
+class StepCounterBox extends StatelessWidget{
   final int steps;
   final Color color;
-
   const StepCounterBox({super.key, required this.steps, required this.color});
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-              builder: (_) => StepCounterPage(steps: steps)),
-        );
+      onTap: (){
+        Navigator.push(context, MaterialPageRoute(builder: (_) => StepCounterPage(steps: steps),
+        ))  ;
       },
       child: Container(
         height: 170,
@@ -189,49 +184,47 @@ class StepCounterBox extends StatelessWidget {
         alignment: Alignment.center,
         child: Text(
           "Steps: $steps",
-          style: const TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold
+        ),
         ),
       ),
     );
   }
 }
-
-class StepCounterPage extends StatelessWidget {
+class StepCounterPage extends StatelessWidget{
   final int steps;
   final int stepGoal = 10000;
-
   const StepCounterPage({super.key, required this.steps});
 
   @override
   Widget build(BuildContext context) {
-    double progress = steps / stepGoal;
+   double progress = steps / stepGoal;
 
     return Scaffold(
-      appBar: AppBar(title: const Text("Step Counter")),
+      appBar: AppBar(title: Text("Step Counter")),
+
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Stack(
+             Stack(
               alignment: Alignment.center,
               children: [
                 SizedBox(
                   width: 180,
                   height: 180,
                   child: CircularProgressIndicator(
-                    value: progress.clamp(0, 1),
+                    value: progress.clamp(0,1),
                     strokeWidth: 14,
                     backgroundColor: Colors.grey.shade300,
                     color: Colors.blueAccent,
                   ),
                 ),
+
                 Text(
                   "$steps / $stepGoal",
                   style: const TextStyle(
-                      fontSize: 22, fontWeight: FontWeight.bold),
+                    fontSize: 22, fontWeight: FontWeight.bold),
                 ),
               ],
             ),
@@ -241,12 +234,11 @@ class StepCounterPage extends StatelessWidget {
               style: const TextStyle(fontSize: 20),
             ),
           ],
-        ),
+        )
       ),
     );
   }
 }
-
 class WaterTrackerBox extends StatefulWidget {
   final Color color;
 
@@ -255,7 +247,6 @@ class WaterTrackerBox extends StatefulWidget {
   @override
   State<WaterTrackerBox> createState() => _WaterTrackerBoxState();
 }
-
 class _WaterTrackerBoxState extends State<WaterTrackerBox> {
   int water = 0;
 
@@ -279,12 +270,56 @@ class _WaterTrackerBoxState extends State<WaterTrackerBox> {
           ElevatedButton(
             onPressed: () {
               setState(() {
-                water += 200;
+                water+=200;
               });
             },
             child: const Text("Drink💧(200 ml)"),
           ),
         ],
+      ),
+    );
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+void main() async {
+  // Flutter'ın async işlemler için hazırlanması
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Firebase'i başlatıyoruz
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: "Firebase Test App",
+      home: Scaffold(
+        appBar: AppBar(title: const Text("Firebase Connected")),
+        body: const Center(
+          child: Text(
+            "Firebase Başarıyla Başlatıldı! 🎉",
+            style: TextStyle(fontSize: 20),
+            textAlign: TextAlign.center,
+          ),
+        ),
       ),
     );
   }
