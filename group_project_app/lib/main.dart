@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:math';
+
+// main
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
 
   runApp(const MainApp());
 }
@@ -20,10 +21,132 @@ class MainApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: HomePage(),
+      home: AuthGate(),
     );
   }
 }
+
+// ----------- AUTH GATE -----------
+// checks if user logged in or not
+
+class AuthGate extends StatelessWidget {
+  const AuthGate({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        if (snapshot.hasData) {
+          return const HomePage();
+        } else {
+          return const LoginPage();
+        }
+      },
+    );
+  }
+}
+
+// ----------- LOGIN PAGE -----------
+
+class LoginPage extends StatefulWidget {
+  const LoginPage({super.key});
+
+  @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  bool loading = false;
+
+  Future<void> login() async {
+    setState(() => loading = true);
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
+      );
+    } on FirebaseAuthException catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message ?? "Error")));
+    }
+    setState(() => loading = false);
+  }
+
+  Future<void> register() async {
+    try {
+      await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
+      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Hesap oluşturuldu ✔")));
+    } on FirebaseAuthException catch (e) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message ?? "Error")));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Padding(
+        padding: const EdgeInsets.all(30),
+        child: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text(
+                "Fitness App Login",
+                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 32),
+
+              TextField(
+                controller: emailController,
+                decoration: const InputDecoration(labelText: "Email"),
+              ),
+              const SizedBox(height: 16),
+
+              TextField(
+                controller: passwordController,
+                decoration: const InputDecoration(labelText: "Şifre"),
+                obscureText: true,
+              ),
+              const SizedBox(height: 32),
+
+              loading
+                  ? const CircularProgressIndicator()
+                  : ElevatedButton(
+                      onPressed: login,
+                      child: const Text("Giriş Yap"),
+                    ),
+              const SizedBox(height: 10),
+
+              TextButton(
+                onPressed: register,
+                child: const Text("Hesabın yok mu? Kayıt ol"),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ----------- HOME PAGE -----------
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -33,14 +156,21 @@ class HomePage extends StatelessWidget {
     int stepCount = Random().nextInt(9000) + 1000;
 
     return Scaffold(
-      appBar: AppBar(title: const Text("FitnessApp")),
+      appBar: AppBar(
+        title: const Text("FitnessApp"),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () {
+              FirebaseAuth.instance.signOut();
+            },
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(24),
         children: [
-          StepCounterBox(
-            steps: stepCount,
-            color: Colors.blueAccent,
-          ),
+          StepCounterBox(steps: stepCount, color: Colors.blueAccent),
           const SizedBox(height: 24),
 
           WaterTrackerBox(color: Colors.cyanAccent),
@@ -67,6 +197,8 @@ class HomePage extends StatelessWidget {
   }
 }
 
+// ----------- NAVIGATION BOX -----------
+
 class NavigationBox extends StatelessWidget {
   final String title;
   final Color color;
@@ -83,8 +215,7 @@ class NavigationBox extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        Navigator.push(
-            context, MaterialPageRoute(builder: (_) => destination));
+        Navigator.push(context, MaterialPageRoute(builder: (_) => destination));
       },
       child: Container(
         height: 170,
@@ -101,6 +232,8 @@ class NavigationBox extends StatelessWidget {
     );
   }
 }
+
+// ----------- COUNTER BOX -----------
 
 class CounterBox extends StatefulWidget {
   final Color color;
@@ -145,6 +278,8 @@ class _CounterBoxState extends State<CounterBox> {
   }
 }
 
+// ----------- DETAIL PAGE -----------
+
 class DetailPage extends StatelessWidget {
   final String title;
 
@@ -164,6 +299,8 @@ class DetailPage extends StatelessWidget {
   }
 }
 
+// ----------- STEP COUNTER PAGE -----------
+
 class StepCounterBox extends StatelessWidget {
   final int steps;
   final Color color;
@@ -176,8 +313,7 @@ class StepCounterBox extends StatelessWidget {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(
-              builder: (_) => StepCounterPage(steps: steps)),
+          MaterialPageRoute(builder: (_) => StepCounterPage(steps: steps)),
         );
       },
       child: Container(
@@ -189,10 +325,7 @@ class StepCounterBox extends StatelessWidget {
         alignment: Alignment.center,
         child: Text(
           "Steps: $steps",
-          style: const TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-          ),
+          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
         ),
       ),
     );
@@ -231,7 +364,9 @@ class StepCounterPage extends StatelessWidget {
                 Text(
                   "$steps / $stepGoal",
                   style: const TextStyle(
-                      fontSize: 22, fontWeight: FontWeight.bold),
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ],
             ),
@@ -246,6 +381,8 @@ class StepCounterPage extends StatelessWidget {
     );
   }
 }
+
+// ----------- WATER TRACKER -----------
 
 class WaterTrackerBox extends StatefulWidget {
   final Color color;
