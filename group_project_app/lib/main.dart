@@ -1,11 +1,17 @@
-import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'firebase_options.dart';
 import 'dart:math';
 
-void main() async {
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+
+import 'firebase_options.dart';
+
+const String? kWebClientId = null;
+
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   runApp(const MainApp());
 }
 
@@ -16,45 +22,233 @@ class MainApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: HomePage(),
+      home: _Bootstrapper(),
     );
   }
 }
 
+class _Bootstrapper extends StatefulWidget {
+  const _Bootstrapper({super.key});
+
+  @override
+  State<_Bootstrapper> createState() => _BootstrapperState();
+}
+
+class _BootstrapperState extends State<_Bootstrapper> {
+  late final Future<void> _initFuture = _init();
+
+  Future<void> _init() async {
+    const String kWebClientId =
+        "661165033318-vm7m0jr9bmc399lka18226l6vf758mji.apps.googleusercontent.com";
+
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+
+    await GoogleSignIn.instance.initialize(
+      //BURAYA BAK GEREKİRSE DOLDUR GEREKİYOR GİBİ
+      //HALLETTİK
+      //OLMAMIŞ  :')
+      serverClientId: kWebClientId,
+    );
+
+    await GoogleSignIn.instance.attemptLightweightAuthentication();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<void>(
+      future: _initFuture,
+      builder: (context, snap) {
+        if (snap.connectionState != ConnectionState.done) {
+          return const _SplashLoading();
+        }
+
+        return StreamBuilder<User?>(
+          stream: FirebaseAuth.instance.authStateChanges(),
+          builder: (context, authSnap) {
+            if (authSnap.connectionState == ConnectionState.waiting) {
+              return const _SplashLoading();
+            }
+            if (authSnap.hasData) return const HomePage();
+            return const SignInPage();
+          },
+        );
+      },
+    );
+  }
+}
+
+class _SplashLoading extends StatelessWidget {
+  const _SplashLoading({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(body: Center(child: CircularProgressIndicator()));
+  }
+}
+
+// ----------------------------
+// HOME
+// ----------------------------
+
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
+
+  Future<void> _logout() async {
+    await FirebaseAuth.instance.signOut();
+    await GoogleSignIn.instance.signOut();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("FitnessApp")),
+      appBar: AppBar(
+        title: const Text("FitnessApp"),
+        actions: [
+          IconButton(icon: const Icon(Icons.logout), onPressed: _logout),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.all(24),
         children: [
           NavigationBox(
             title: "BMI Calculator",
-            color: Colors.tealAccent.shade700,
+            color: Colors.tealAccent,
             destination: const BmiPage(),
           ),
           const SizedBox(height: 24),
-
           NavigationBox(
             title: "Program Oluştur",
             color: Colors.deepPurpleAccent,
             destination: const ProgramBuilderPage(),
           ),
           const SizedBox(height: 24),
-
           const CounterBox(color: Colors.purpleAccent),
           const SizedBox(height: 24),
-
-          // Keep Water Tracker
-          WaterTrackerBox(color: Colors.cyanAccent),
+          const WaterTrackerBox(color: Colors.cyanAccent),
         ],
       ),
     );
   }
 }
+
+// ----------------------------
+// SIGN IN
+// ----------------------------
+
+class SignInPage extends StatefulWidget {
+  const SignInPage({super.key});
+
+  @override
+  State<SignInPage> createState() => _SignInPageState();
+}
+
+class _SignInPageState extends State<SignInPage> {
+  bool _busy = false;
+
+  void _snack(String msg) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+    print(msg);
+  }
+
+  Future<void> _signInWithGoogle() async {
+    if (_busy) return;
+    setState(() => _busy = true);
+
+    try {
+      final signIn = GoogleSignIn.instance;
+
+      if (!signIn.supportsAuthenticate()) {
+        _snack(
+          'Bu platformda Google Sign-In desteklenmiyor. Android/Web deneyin.',
+        );
+        return;
+      }
+
+      final GoogleSignInAccount? googleUser = await signIn.authenticate();
+      if (googleUser == null) {
+        _snack('İşlem iptal edildi.');
+        return;
+      }
+
+      final GoogleSignInAuthentication googleAuth = googleUser.authentication;
+
+      // ID TOKEN MUHABBETİ
+      if (googleAuth.idToken == null) {
+        _snack(
+          'idToken null geldi.\n'
+          'Çözüm: GoogleSignIn.initialize(serverClientId: WEB_CLIENT_ID) ekle ve\n'
+          'Firebase Console’da Google provider + Android SHA-1 ayarlarını kontrol et.',
+        );
+        return;
+      }
+
+      final credential = GoogleAuthProvider.credential(
+        idToken: googleAuth.idToken,
+      );
+
+      await FirebaseAuth.instance.signInWithCredential(credential);
+    } on FirebaseAuthException catch (e) {
+      _snack('FirebaseAuthException: ${e.code}\n${e.message ?? ''}');
+    } on PlatformException catch (e) {
+      _snack('PlatformException: ${e.code}\n${e.message ?? ''}');
+    } catch (e) {
+      _snack('Hata: $e');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text("Giriş Yap")),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text(
+              "Welcome",
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 30),
+            ElevatedButton.icon(
+              onPressed: _busy ? null : _signInWithGoogle,
+              icon: _busy
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    )
+                  : const Icon(Icons.login),
+              label: Text(
+                _busy ? "Signing in..." : "Sign in with Google",
+                style: const TextStyle(fontSize: 18),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.black,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ----------------------------
+// UI WIDGETS
+// ----------------------------
 
 class NavigationBox extends StatelessWidget {
   final String title;
@@ -92,6 +286,7 @@ class NavigationBox extends StatelessWidget {
 }
 
 class CounterBox extends StatefulWidget {
+  // SAYAÇ KUTUSU
   final Color color;
 
   const CounterBox({super.key, required this.color});
@@ -131,6 +326,7 @@ class _CounterBoxState extends State<CounterBox> {
 }
 
 class WaterTrackerBox extends StatefulWidget {
+  // SU TAKİP EDİCİ
   final Color color;
 
   const WaterTrackerBox({super.key, required this.color});
@@ -170,10 +366,11 @@ class _WaterTrackerBoxState extends State<WaterTrackerBox> {
 }
 
 // ----------------------------
-// BMI Page
+// BMI PAGE
 // ----------------------------
 
 class BmiPage extends StatefulWidget {
+  // BOY KİLO ORAN SAYFASI
   const BmiPage({super.key});
 
   @override
@@ -200,7 +397,6 @@ class _BmiPageState extends State<BmiPage> {
     final bmi = weight / (heightM * heightM);
 
     String category;
-    // Use standard WHO BMI categories but add a small gender-aware note.
     if (bmi < 18.5) {
       category = 'Underweight';
     } else if (bmi < 25) {
@@ -219,7 +415,6 @@ class _BmiPageState extends State<BmiPage> {
 
   String _genderComment() {
     if (_bmi == null) return '';
-    // Provide a short note that body composition varies and how to interpret.
     if (_gender == 'Male') {
       return 'Not: Erkeklerde kas oranı genelde daha yüksek olabilir — bel çevresi ve kas kütlesine bakmak faydalıdır.';
     } else {
@@ -319,7 +514,7 @@ class _BmiPageState extends State<BmiPage> {
 }
 
 // ----------------------------
-// Program Builder
+// PROGRAM BUILDER
 // ----------------------------
 
 class ProgramBuilderPage extends StatefulWidget {
@@ -330,6 +525,7 @@ class ProgramBuilderPage extends StatefulWidget {
 }
 
 class _ProgramBuilderPageState extends State<ProgramBuilderPage> {
+  //PROGRAM YAPMA SAYFASI
   String _location = 'Home';
   String _split = 'Push/Pull/Legs';
   String _goal = 'Strength';
@@ -342,8 +538,7 @@ class _ProgramBuilderPageState extends State<ProgramBuilderPage> {
       split: _split,
       goal: _goal,
     );
-    final generated = generator.generate();
-    setState(() => program = generated);
+    setState(() => program = generator.generate());
   }
 
   @override
@@ -473,9 +668,9 @@ class Exercise {
 }
 
 class ProgramGenerator {
-  final String location; // Home or Gym
-  final String split; // Push/Pull/Legs or Upper/Lower
-  final String goal; // Strength, Fat Loss, Conditioning
+  final String location;
+  final String split;
+  final String goal;
   final Random _rnd = Random();
 
   ProgramGenerator({
@@ -485,6 +680,7 @@ class ProgramGenerator {
   });
 
   Map<String, List<Exercise>> generate() {
+    //AŞAĞIDAKİ HERŞEY SİLİNİP Aİ İMPLEMENTE EDİLECEK
     if (split == 'Push/Pull/Legs') {
       return {'Push': _buildPush(), 'Pull': _buildPull(), 'Legs': _buildLegs()};
     } else {
@@ -496,17 +692,12 @@ class ProgramGenerator {
     switch (goal) {
       case 'Strength':
         return 4;
-      case 'Fat Loss':
-        return 3;
-      case 'Conditioning':
-        return 3;
       default:
         return 3;
     }
   }
 
   String _repsForGoal(String exerciseType) {
-    // exerciseType can be 'compound' or 'accessory' or 'cardio'
     if (goal == 'Strength') return '4-6';
     if (goal == 'Fat Loss') return '10-15';
     if (goal == 'Conditioning') {
@@ -517,7 +708,6 @@ class ProgramGenerator {
   }
 
   List<String> _pool(String kind) {
-    // kind: pushCompound, pushAccessory, pullCompound, pullAccessory, legCompound, legAccessory, conditioning
     final home = {
       'pushCompound': [
         'Push-ups',
@@ -567,22 +757,23 @@ class ProgramGenerator {
     final pool = _pool(poolKind);
     final picked = <Exercise>[];
     final used = <int>{};
+
     for (var i = 0; i < count && i < pool.length; i++) {
       int idx;
       do {
         idx = _rnd.nextInt(pool.length);
       } while (used.contains(idx) && used.length < pool.length);
+
       used.add(idx);
-      final name = pool[idx];
       picked.add(
-        Exercise(name, _setsForGoal(), _repsForGoal(type), note: note),
+        Exercise(pool[idx], _setsForGoal(), _repsForGoal(type), note: note),
       );
     }
     return picked;
   }
 
   List<Exercise> _buildPush() {
-    final List<Exercise> out = [];
+    final out = <Exercise>[];
     out.addAll(_pick('pushCompound', 2, 'compound'));
     out.addAll(_pick('pushAccessory', 2, 'accessory'));
     if (goal == 'Conditioning') {
@@ -592,40 +783,44 @@ class ProgramGenerator {
   }
 
   List<Exercise> _buildPull() {
-    final List<Exercise> out = [];
+    final out = <Exercise>[];
     out.addAll(_pick('pullCompound', 2, 'compound'));
     out.addAll(_pick('pullAccessory', 2, 'accessory'));
-    if (goal == 'Conditioning')
+    if (goal == 'Conditioning') {
       out.addAll(_pick('conditioning', 1, 'cardio', note: 'Circuit-style'));
+    }
     return out;
   }
 
   List<Exercise> _buildLegs() {
-    final List<Exercise> out = [];
+    final out = <Exercise>[];
     out.addAll(_pick('legCompound', 2, 'compound'));
     out.addAll(_pick('legAccessory', 2, 'accessory'));
-    if (goal == 'Conditioning')
+    if (goal == 'Conditioning') {
       out.addAll(_pick('conditioning', 1, 'cardio', note: 'Interval'));
+    }
     return out;
   }
 
   List<Exercise> _buildUpper() {
-    final List<Exercise> out = [];
+    final out = <Exercise>[];
     out.addAll(_pick('pushCompound', 1, 'compound'));
     out.addAll(_pick('pullCompound', 1, 'compound'));
     out.addAll(_pick('pushAccessory', 1, 'accessory'));
     out.addAll(_pick('pullAccessory', 1, 'accessory'));
-    if (goal == 'Conditioning')
+    if (goal == 'Conditioning') {
       out.addAll(_pick('conditioning', 1, 'cardio', note: 'Short Circuit'));
+    }
     return out;
   }
 
   List<Exercise> _buildLower() {
-    final List<Exercise> out = [];
+    final out = <Exercise>[];
     out.addAll(_pick('legCompound', 2, 'compound'));
     out.addAll(_pick('legAccessory', 2, 'accessory'));
-    if (goal == 'Conditioning')
+    if (goal == 'Conditioning') {
       out.addAll(_pick('conditioning', 1, 'cardio', note: 'Sled/Intervals'));
+    }
     return out;
   }
 }
