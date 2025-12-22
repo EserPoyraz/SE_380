@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:flutter/services.dart';
 
 class SignInPage extends StatefulWidget {
   const SignInPage({super.key});
@@ -16,7 +16,7 @@ class _SignInPageState extends State<SignInPage> {
   void _snack(String msg) {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
-    print(msg);
+    debugPrint(msg);
   }
 
   Future<void> _signInWithGoogle() async {
@@ -26,34 +26,31 @@ class _SignInPageState extends State<SignInPage> {
     try {
       final signIn = GoogleSignIn.instance;
 
-      if (!signIn.supportsAuthenticate()) {
-        _snack(
-          'Bu platformda Google Sign-In desteklenmiyor. Android/Web deneyin.',
-        );
-        return;
-      }
+      // DECREASES REAUTH FAILED ERROR
+      await signIn.signOut();
 
       final GoogleSignInAccount? googleUser = await signIn.authenticate();
       if (googleUser == null) {
         _snack('İşlem iptal edildi.');
         return;
       }
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
 
-      final GoogleSignInAuthentication googleAuth = googleUser.authentication;
+      final String? idToken = googleAuth.idToken;
 
-      // ID TOKEN MUHABBETİ
-      if (googleAuth.idToken == null) {
+      if (idToken == null) {
         _snack(
           'idToken null geldi.\n'
-          'Çözüm: GoogleSignIn.initialize(serverClientId: WEB_CLIENT_ID) ekle ve\n'
-          'Firebase Console’da Google provider + Android SHA-1 ayarlarını kontrol et.',
+          'Android için serverClientId initialize edildi mi?\n'
+          'Firebase Console > Authentication > Google etkin mi?\n'
+          'SHA-1/SHA-256 eklendi mi?',
         );
         return;
       }
 
-      final credential = GoogleAuthProvider.credential(
-        idToken: googleAuth.idToken,
-      );
+      // IDTOKEN
+      final credential = GoogleAuthProvider.credential(idToken: idToken);
 
       await FirebaseAuth.instance.signInWithCredential(credential);
     } on FirebaseAuthException catch (e) {

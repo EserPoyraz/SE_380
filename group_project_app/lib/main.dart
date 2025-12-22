@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -9,11 +8,13 @@ import 'firebase_options.dart';
 import 'pages/home_page.dart';
 import 'pages/sign_in_page.dart';
 
+// CLIENT TYPE 3 WEB CLIENT ID ::::::
+const String kServerClientId =
+    "661165033318-vm7m0jr9bmc399lka18226l6vf758mji.apps.googleusercontent.com";
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-
   runApp(const MainApp());
 }
 
@@ -40,14 +41,8 @@ class _BootstrapperState extends State<_Bootstrapper> {
   late final Future<void> _initFuture = _init();
 
   Future<void> _init() async {
-    // Web Client ID (sadece WEB'de gerekli)
-    const String kWebClientId =
-        "661165033318-vm7m0jr9bmc399lka18226l6vf758mji.apps.googleusercontent.com";
-
-    // ✅ Firebase burada tekrar initialize ETME
-    if (kIsWeb) {
-      await GoogleSignIn.instance.initialize(serverClientId: kWebClientId);
-    }
+    // INITIALIZE AT EVERY PLATFORM
+    await GoogleSignIn.instance.initialize(serverClientId: kServerClientId);
   }
 
   @override
