@@ -28,19 +28,19 @@ class HomePage extends StatelessWidget {
         children: [
           NavigationBox(
             title: "BMI Calculator",
-            color: Colors.tealAccent,
+            color: const Color.fromARGB(255, 0, 44, 133),
             destination: const BmiPage(),
           ),
           const SizedBox(height: 24),
           NavigationBox(
             title: "Program Oluştur",
-            color: Colors.deepPurpleAccent,
+            color: const Color.fromARGB(255, 0, 44, 133),
             destination: const ProgramBuilderPage(),
           ),
           const SizedBox(height: 24),
-          const CounterBox(color: Colors.purpleAccent),
+          const CounterBox(color: const Color.fromARGB(255, 0, 44, 133)),
           const SizedBox(height: 24),
-          const WaterTrackerBox(color: Colors.cyanAccent),
+          const WaterTrackerBox(color: const Color.fromARGB(255, 0, 44, 133)),
         ],
       ),
     );
