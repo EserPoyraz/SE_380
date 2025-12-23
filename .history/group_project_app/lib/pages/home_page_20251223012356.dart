@@ -6,9 +6,6 @@ import '../widgets/custom_widgets.dart'; // Box'lar burada
 import 'bmi_page.dart';
 import 'program_builder_page.dart';
 
-import 'package:cloud_firestore/cloud_firestore.dart';
-
-
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
@@ -19,8 +16,6 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser!;
-
     return Scaffold(
       appBar: AppBar(
         title: const Text("FitnessApp"),
@@ -43,18 +38,9 @@ class HomePage extends StatelessWidget {
             destination: const ProgramBuilderPage(),
           ),
           const SizedBox(height: 24),
-          CounterBox(
-  color: const Color.fromARGB(255, 0, 44, 133),
-  userId: user.uid,
-),
-const SizedBox(height: 24),
-
-
+          const CounterBox(color: const Color.fromARGB(255, 0, 44, 133)),
           const SizedBox(height: 24),
-          WaterTrackerBox(
-  color: const Color.fromARGB(255, 0, 44, 133),
-  userId: user.uid,
-),
+          const WaterTrackerBox(color: const Color.fromARGB(255, 0, 44, 133)),
         ],
       ),
     );

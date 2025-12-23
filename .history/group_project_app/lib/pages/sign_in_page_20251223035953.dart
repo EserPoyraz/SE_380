@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 
 class SignInPage extends StatefulWidget {
   const SignInPage({super.key});
@@ -55,31 +53,6 @@ class _SignInPageState extends State<SignInPage> {
       final credential = GoogleAuthProvider.credential(idToken: idToken);
 
       await FirebaseAuth.instance.signInWithCredential(credential);
-
-      final user = FirebaseAuth.instance.currentUser!;
-
-final userRef =
-    FirebaseFirestore.instance.collection('users').doc(user.uid);
-
-final doc = await userRef.get();
-
-if (!doc.exists) {
-  // 🔥 SADECE İLK GİRİŞTE ÇALIŞIR
-  await userRef.set({
-    'name': user.displayName,
-    'email': user.email,
-    'photoUrl': user.photoURL,
-    'bmi': null,
-    'program': null,
-    'sets': 0,
-    'water': 0,
-    'friends': [],
-    'createdAt': FieldValue.serverTimestamp(),
-  });
-}
-
-
-
     } on FirebaseAuthException catch (e) {
       _snack('FirebaseAuthException: ${e.code}\n${e.message ?? ''}');
     } on PlatformException catch (e) {

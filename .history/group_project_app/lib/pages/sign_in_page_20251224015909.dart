@@ -56,16 +56,13 @@ class _SignInPageState extends State<SignInPage> {
 
       await FirebaseAuth.instance.signInWithCredential(credential);
 
-      final user = FirebaseAuth.instance.currentUser!;
+      final user = FirebaseAuth.instance.currentUser;
 
-final userRef =
-    FirebaseFirestore.instance.collection('users').doc(user.uid);
-
-final doc = await userRef.get();
-
-if (!doc.exists) {
-  // 🔥 SADECE İLK GİRİŞTE ÇALIŞIR
-  await userRef.set({
+if (user != null) {
+  await FirebaseFirestore.instance
+      .collection('users')
+      .doc(user.uid)
+      .set({
     'name': user.displayName,
     'email': user.email,
     'photoUrl': user.photoURL,
@@ -75,9 +72,8 @@ if (!doc.exists) {
     'water': 0,
     'friends': [],
     'createdAt': FieldValue.serverTimestamp(),
-  });
+  }, SetOptions(merge: true));
 }
-
 
 
     } on FirebaseAuthException catch (e) {

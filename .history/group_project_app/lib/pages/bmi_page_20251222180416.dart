@@ -1,7 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 
 class BmiPage extends StatefulWidget {
   // BOY KİLO ORAN SAYFASI
@@ -18,54 +15,34 @@ class _BmiPageState extends State<BmiPage> {
   double? _bmi;
   String? _category;
 
-  Future<void> _calculate() async {
-  final double? weight = double.tryParse(
-    _weightCtrl.text.replaceAll(',', '.'),
-  );
-  final double? heightCm = double.tryParse(
-    _heightCtrl.text.replaceAll(',', '.'),
-  );
-  if (weight == null || heightCm == null || heightCm <= 0) return;
-
-  final heightM = heightCm / 100;
-  final bmi = weight / (heightM * heightM);
-
-  String category;
-  if (bmi < 18.5) {
-    category = 'Underweight';
-  } else if (bmi < 25) {
-    category = 'Normal weight';
-  } else if (bmi < 30) {
-    category = 'Overweight';
-  } else {
-    category = 'Obesity';
-  }
-
-  // 🔥 FIRESTORE'A KAYDET
-  final user = FirebaseAuth.instance.currentUser!;
-  await FirebaseFirestore.instance
-      .collection('users')
-      .doc(user.uid)
-      .update({
-    'bmi': double.parse(bmi.toStringAsFixed(1)),
-  });
-
-  setState(() {
-    _bmi = bmi;
-    _category = category;
-  });
-
-  if (mounted) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'BMI kaydedildi: ${bmi.toStringAsFixed(1)}',
-        ),
-      ),
+  void _calculate() {
+    final double? weight = double.tryParse(
+      _weightCtrl.text.replaceAll(',', '.'),
     );
-  }
-}
+    final double? heightCm = double.tryParse(
+      _heightCtrl.text.replaceAll(',', '.'),
+    );
+    if (weight == null || heightCm == null || heightCm <= 0) return;
 
+    final heightM = heightCm / 100;
+    final bmi = weight / (heightM * heightM);
+
+    String category;
+    if (bmi < 18.5) {
+      category = 'Underweight';
+    } else if (bmi < 25) {
+      category = 'Normal weight';
+    } else if (bmi < 30) {
+      category = 'Overweight';
+    } else {
+      category = 'Obesity';
+    }
+
+    setState(() {
+      _bmi = bmi;
+      _category = category;
+    });
+  }
 
   String _genderComment() {
     if (_bmi == null) return '';
