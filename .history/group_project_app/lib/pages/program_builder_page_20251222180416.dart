@@ -6,8 +6,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/ai_workout_generator.dart';
 import '../services/program_repository.dart';
 import 'program_detail_page.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-
 
 class ProgramBuilderPage extends StatefulWidget {
   const ProgramBuilderPage({super.key});
@@ -103,22 +101,6 @@ class _ProgramBuilderPageState extends State<ProgramBuilderPage>
             daysJson: result.days,
           )
           .timeout(const Duration(seconds: 15));
-
-          final uid = FirebaseAuth.instance.currentUser!.uid;
-
-await FirebaseFirestore.instance
-    .collection('users')
-    .doc(uid)
-    .set({
-  'currentProgram': {
-    'title': result.title,
-    'goal': _goal,
-    'split': _split,
-    'location': _location,
-    'updatedAt': FieldValue.serverTimestamp(),
-  }
-}, SetOptions(merge: true));
-
 
       debugPrint('FS: save DONE');
 
