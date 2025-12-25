@@ -260,48 +260,24 @@ class _ProgramBuilderPageState extends State<ProgramBuilderPage>
           separatorBuilder: (_, __) => const SizedBox(height: 12),
           itemBuilder: (context, i) {
             final d = docs[i].data();
-           return AppCard(
-  child: ListTile(
-    contentPadding: const EdgeInsets.symmetric(
-      horizontal: 20,
-      vertical: 12,
-    ),
-    title: Text(
-      d['title'] ?? 'Program',
-      style: const TextStyle(
-        color: Colors.white,
-        fontWeight: FontWeight.bold,
-        fontSize: 16,
-      ),
-    ),
-    subtitle: Padding(
-      padding: const EdgeInsets.only(top: 4),
-      child: Text(
-        d['goal'] ?? '',
-        style: TextStyle(
-          color: Colors.white.withOpacity(0.7),
-          fontSize: 13,
-        ),
-      ),
-    ),
-    trailing: Icon(
-      Icons.chevron_right,
-      color: Colors.white.withOpacity(0.6),
-    ),
-    onTap: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => ProgramDetailPage(
-            title: d['title'],
-            days: (d['days'] as Map).cast<String, dynamic>(),
-          ),
-        ),
-      );
-    },
-  ),
-);
-
+            return AppCard(
+              child: ListTile(
+                title: Text(d['title'] ?? 'Program'),
+                subtitle: Text(d['goal'] ?? ''),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ProgramDetailPage(
+                        title: d['title'],
+                        days: (d['days'] as Map).cast<String, dynamic>(),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            );
           },
         );
       },
