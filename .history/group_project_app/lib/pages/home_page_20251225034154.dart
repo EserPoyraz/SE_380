@@ -51,7 +51,7 @@ class _HomePageState extends State<HomePage> {
           ListView(
             padding: EdgeInsets.zero,
             children: [
-              // ================= HEADER =================
+              // ================= HERO HEADER =================
               Padding(
                 padding: const EdgeInsets.fromLTRB(24, 60, 24, 20),
                 child: ClipRRect(
@@ -61,7 +61,12 @@ class _HomePageState extends State<HomePage> {
                     child: Container(
                       padding: const EdgeInsets.all(24),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.08),
+                        gradient: LinearGradient(
+                          colors: [
+                            Colors.white.withOpacity(0.12),
+                            Colors.white.withOpacity(0.05),
+                          ],
+                        ),
                         borderRadius: BorderRadius.circular(28),
                         border: Border.all(
                           color: Colors.white.withOpacity(0.15),
@@ -94,11 +99,12 @@ class _HomePageState extends State<HomePage> {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 18),
+                          const SizedBox(height: 20),
                           Text(
                             "Welcome back,",
                             style: TextStyle(
                               color: Colors.white.withOpacity(0.7),
+                              fontSize: 15,
                             ),
                           ),
                           const SizedBox(height: 6),
@@ -106,7 +112,7 @@ class _HomePageState extends State<HomePage> {
                             name,
                             style: const TextStyle(
                               fontSize: 26,
-                              fontWeight: FontWeight.bold,
+                              fontWeight: FontWeight.w700,
                               color: Colors.white,
                             ),
                           ),
@@ -137,7 +143,7 @@ class _HomePageState extends State<HomePage> {
 
               const SizedBox(height: 30),
 
-              // ================= ACTIONS =================
+              // ================= ACTION GRID =================
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Row(
@@ -180,7 +186,7 @@ class _HomePageState extends State<HomePage> {
 
               const SizedBox(height: 40),
 
-              // ================= DAILY PERFORMANCE =================
+              // ================= DAILY STATS =================
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: const Text(
@@ -189,6 +195,7 @@ class _HomePageState extends State<HomePage> {
                     color: Colors.white,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
+                    letterSpacing: 1.2,
                   ),
                 ),
               ),
@@ -196,32 +203,26 @@ class _HomePageState extends State<HomePage> {
 
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Row(
+                child: Column(
                   children: [
-                    Expanded(
-                      child: _StatWrapper(
-                        height: 190,
-                        child: CounterBox(
-                          color: Colors.deepPurpleAccent,
-                          userId: user.uid,
-                        ),
+                    _StatWrapper(
+                      child: CounterBox(
+                        color: Colors.deepPurpleAccent,
+                        userId: user.uid,
                       ),
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _StatWrapper(
-                        height: 190,
-                        child: WaterTrackerBox(
-                          color: Colors.cyanAccent,
-                          userId: user.uid,
-                        ),
+                    const SizedBox(height: 18),
+                    _StatWrapper(
+                      child: WaterTrackerBox(
+                        color: Colors.cyanAccent,
+                        userId: user.uid,
                       ),
                     ),
                   ],
                 ),
               ),
 
-              const SizedBox(height: 50),
+              const SizedBox(height: 60),
               const Center(
                 child: Text(
                   "Built for consistency. Designed for winners.",
@@ -237,7 +238,7 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-// ================= UI HELPERS =================
+// ================= COMPONENTS =================
 
 class _ActionTile extends StatelessWidget {
   final String title;
@@ -298,27 +299,25 @@ class _ActionTile extends StatelessWidget {
 
 class _StatWrapper extends StatelessWidget {
   final Widget child;
-  final double height;
 
-  const _StatWrapper({required this.child, required this.height});
+  const _StatWrapper({required this.child});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: height,
-      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white.withOpacity(0.06),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: Colors.white10),
       ),
-      child: Center(child: child),
+      child: child,
     );
   }
 }
 
 class _GlowCircle extends StatelessWidget {
   final Color color;
+
   const _GlowCircle({required this.color});
 
   @override
@@ -329,7 +328,10 @@ class _GlowCircle extends StatelessWidget {
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         gradient: RadialGradient(
-          colors: [color.withOpacity(0.45), Colors.transparent],
+          colors: [
+            color.withOpacity(0.45),
+            Colors.transparent,
+          ],
         ),
       ),
     );
