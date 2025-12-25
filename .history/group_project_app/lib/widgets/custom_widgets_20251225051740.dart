@@ -69,7 +69,7 @@ class CounterBox extends StatelessWidget {
         return _StatContent(
           title: "Sets",
           value: "$sets",
-          buttonText: "Save 💪 Set ",
+          buttonText: "Log Set 💪",
           color: color,
           onPressed: () async {
             await FirebaseFirestore.instance
