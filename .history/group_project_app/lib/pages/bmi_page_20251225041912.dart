@@ -137,28 +137,15 @@ class _BmiPageState extends State<BmiPage> {
                       DropdownButton<String>(
                         value: _gender,
                         dropdownColor: AppTheme.surface,
-                        iconEnabledColor: Colors.white,
-                        style: const TextStyle(
-                          color: Colors.white,        // 🔥 ASIL ÇÖZÜM
-                          fontWeight: FontWeight.w600,
-                        ),
-                        underline: Container(
-                          height: 1,
-                          color: Colors.white38,
-                        ),
                         items: const [
                           DropdownMenuItem(
-                            value: 'Male',
-                            child: Text('Male'),
-                          ),
+                              value: 'Male', child: Text('Male')),
                           DropdownMenuItem(
-                            value: 'Female',
-                            child: Text('Female'),
-                          ),
+                              value: 'Female', child: Text('Female')),
                         ],
-                        onChanged: (v) => setState(() => _gender = v ?? 'Male'),
+                        onChanged: (v) =>
+                            setState(() => _gender = v ?? 'Male'),
                       ),
-
                       const Spacer(),
                       AppButton(
                         text: "Calculate",
