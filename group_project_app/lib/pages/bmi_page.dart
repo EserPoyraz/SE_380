@@ -52,10 +52,17 @@ class _BmiPageState extends State<BmiPage> {
 
     final user = FirebaseAuth.instance.currentUser!;
     await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+      
       'bmi': double.parse(bmi.toStringAsFixed(1)),
       'bmiCategory': category,
       'gender': _gender,
+    
+      // ✅ yeni alanlar
+      'heightCm': heightCm.round(),   // input cm
+      'weightKg': weight.round(),     // input kg
+      'updatedAt': FieldValue.serverTimestamp(),
     });
+    
 
     setState(() {
       _bmi = bmi;

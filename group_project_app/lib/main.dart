@@ -5,8 +5,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 
 import 'firebase_options.dart';
-import 'pages/home_page.dart';
+import 'pages/main_scaffold.dart';
+
 import 'pages/sign_in_page.dart';
+import 'pages/bmi_page.dart';
 
 // CLIENT TYPE 3 WEB CLIENT ID ::::::
 const String kServerClientId =
@@ -23,9 +25,13 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: _Bootstrapper(),
+    return MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: _Bootstrapper(),
+        routes: {
+        '/bmi': (_) => const BmiPage(),
+        },
+      
     );
   }
 }
@@ -60,7 +66,7 @@ class _BootstrapperState extends State<_Bootstrapper> {
             if (authSnap.connectionState == ConnectionState.waiting) {
               return const _SplashLoading();
             }
-            if (authSnap.hasData) return const HomePage();
+            if (authSnap.hasData) return const MainScaffold();
             return const SignInPage();
           },
         );
