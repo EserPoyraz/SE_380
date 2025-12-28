@@ -56,6 +56,7 @@ Kurallar:
 - Home ise ev ekipmanına uygun yaz (dumbbell/bodyweight).
 - Gym ise barbell/machine da olabilir.
 - Açıklamalar kısa olsun.
+- Herşeyi ingilizce yaz. Kelimesi kelimesine ingilizce olmak zorunda.
 ''';
 
     final response = await model.generateContent([Content.text(prompt)]);
