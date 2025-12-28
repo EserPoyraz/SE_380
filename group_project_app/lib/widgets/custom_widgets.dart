@@ -54,30 +54,27 @@ class CounterBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<DocumentSnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('users')
-          .doc(userId)
-          .snapshots(),
+      stream: FirebaseFirestore.instance.collection('users').doc(userId).snapshots(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        final data = snapshot.data!.data() as Map<String, dynamic>;
-        final int sets = data['sets'] ?? 0;
+        final doc = snapshot.data!;
+        final data = (doc.data() as Map<String, dynamic>?) ?? {};
+        final int sets = (data['sets'] as int?) ?? 0;
 
         return _StatContent(
           title: "Sets",
           value: "$sets",
-          buttonText: "Save 💪 Set ",
+          buttonText: "Save Set",
+          buttonIcon: Icons.fitness_center,
           color: color,
           onPressed: () async {
             await FirebaseFirestore.instance
                 .collection('users')
                 .doc(userId)
-                .update({
-              'sets': FieldValue.increment(1),
-            });
+                .set({'sets': FieldValue.increment(1)}, SetOptions(merge: true));
           },
         );
       },
@@ -99,30 +96,27 @@ class WaterTrackerBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return StreamBuilder<DocumentSnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('users')
-          .doc(userId)
-          .snapshots(),
+      stream: FirebaseFirestore.instance.collection('users').doc(userId).snapshots(),
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
         }
 
-        final data = snapshot.data!.data() as Map<String, dynamic>;
-        final int water = data['water'] ?? 0;
+        final doc = snapshot.data!;
+        final data = (doc.data() as Map<String, dynamic>?) ?? {};
+        final int water = (data['water'] as int?) ?? 0;
 
         return _StatContent(
           title: "Water",
           value: "$water ml",
-          buttonText: "Drink 💧 +200 ml",
+          buttonText: "+200 ml",
+          buttonIcon: Icons.water_drop,
           color: color,
           onPressed: () async {
             await FirebaseFirestore.instance
                 .collection('users')
                 .doc(userId)
-                .update({
-              'water': FieldValue.increment(200),
-            });
+                .set({'water': FieldValue.increment(200)}, SetOptions(merge: true));
           },
         );
       },
@@ -135,6 +129,7 @@ class _StatContent extends StatelessWidget {
   final String title;
   final String value;
   final String buttonText;
+  final IconData buttonIcon; // ✅ NEW
   final Color color;
   final VoidCallback onPressed;
 
@@ -142,6 +137,7 @@ class _StatContent extends StatelessWidget {
     required this.title,
     required this.value,
     required this.buttonText,
+    required this.buttonIcon,
     required this.color,
     required this.onPressed,
   });
@@ -157,11 +153,17 @@ class _StatContent extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            title,
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
+              title,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Colors.white.withOpacity(0.85),
+                    fontWeight: FontWeight.w700,
+                  ) ??
+                  TextStyle(
+                    color: Colors.white.withOpacity(0.85),
+                    fontWeight: FontWeight.w700,
+                  ),
+            ), 
           const SizedBox(height: 8),
-
           FittedBox(
             child: Text(
               value,
@@ -172,11 +174,10 @@ class _StatContent extends StatelessWidget {
               ),
             ),
           ),
-
           const SizedBox(height: 14),
-
           AppButton(
             text: buttonText,
+            icon: buttonIcon,
             accentColor: color,
             onPressed: onPressed,
           ),

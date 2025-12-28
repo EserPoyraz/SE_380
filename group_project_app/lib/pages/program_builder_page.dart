@@ -55,6 +55,26 @@ class _ProgramBuilderPageState extends State<ProgramBuilderPage>
       SnackBar(content: Text(msg)),
     );
   }
+  Future<bool> _confirmDelete(String title) async {
+  final ok = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: const Text("Delete program?"),
+      content: Text('"$title" will be permanently deleted.'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: const Text("Cancel"),
+        ),
+        ElevatedButton(
+          onPressed: () => Navigator.pop(context, true),
+          child: const Text("Delete"),
+        ),
+      ],
+    ),
+  );
+  return ok ?? false;
+}
 
   double? _parseNum(TextEditingController c) {
     return double.tryParse(c.text.replaceAll(',', '.'));
@@ -120,7 +140,7 @@ class _ProgramBuilderPageState extends State<ProgramBuilderPage>
       if (mounted) setState(() => _busy = false);
     }
   }
-
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -298,9 +318,45 @@ class _ProgramBuilderPageState extends State<ProgramBuilderPage>
                     ),
                   ),
                 ),
-                trailing: Icon(
-                  Icons.chevron_right,
-                  color: Colors.white.withOpacity(0.6),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline),
+                      color: Colors.white.withOpacity(0.7),
+                      onPressed: () async {
+                        final uid = FirebaseAuth.instance.currentUser!.uid;
+
+                        // 1) önce programı sil
+                        await _repo.deleteProgram(docs[i].id);
+
+                        // 2) eğer bu silinen program currentProgram ise temizle
+                        final userRef =
+                            FirebaseFirestore.instance.collection('users').doc(uid);
+                        final userSnap = await userRef.get();
+                        final userData = userSnap.data() ?? {};
+                        final current =
+                            (userData['currentProgram'] as Map?)?.cast<String, dynamic>();
+
+                        final currentTitle = (current?['title'] as String?) ?? "";
+                        final deletedTitle = (d['title'] as String?) ?? "";
+
+                        if (currentTitle.isNotEmpty && currentTitle == deletedTitle) {
+                          await userRef.update({'currentProgram': FieldValue.delete()});
+                        }
+
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text("Program deleted")),
+                          );
+                        }
+                      },
+                    ),
+                    Icon(
+                      Icons.chevron_right,
+                      color: Colors.white.withOpacity(0.6),
+                    ),
+                  ],
                 ),
                 onTap: () {
                   Navigator.push(

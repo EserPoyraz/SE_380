@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../widgets/custom_widgets.dart';
 import 'bmi_page.dart';
@@ -16,10 +17,13 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  late final Future<void> _userInitFuture;
+
   @override
   void initState() {
     super.initState();
-    UserInitializer.ensureUserExists();
+    // ✅ Yeni kullanıcıda Firestore dokümanı oluşmadan UI render olmasın
+    _userInitFuture = UserInitializer.ensureUserExists();
   }
 
   Future<void> _logout() async {
@@ -29,211 +33,271 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser!;
-    final name = user.displayName?.split(" ").first ?? "Athlete";
+    return FutureBuilder<void>(
+      future: _userInitFuture,
+      builder: (context, snap) {
+        if (snap.connectionState != ConnectionState.done) {
+          return const Scaffold(
+            backgroundColor: Color(0xFF0B0E1A),
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
 
-    return Scaffold(
-      backgroundColor: const Color(0xFF0B0E1A),
-      body: Stack(
-        children: [
-          // BACKGROUND GLOW
-          Positioned(
-            top: -120,
-            left: -80,
-            child: _GlowCircle(color: Colors.purpleAccent),
-          ),
-          Positioned(
-            bottom: -140,
-            right: -100,
-            child: _GlowCircle(color: Colors.cyanAccent),
-          ),
+        if (snap.hasError) {
+          return Scaffold(
+            backgroundColor: const Color(0xFF0B0E1A),
+            body: Center(
+              child: Text(
+                "User init failed:\n${snap.error}",
+                textAlign: TextAlign.center,
+                style: const TextStyle(color: Colors.white),
+              ),
+            ),
+          );
+        }
 
-          ListView(
-            padding: EdgeInsets.zero,
+        final user = FirebaseAuth.instance.currentUser!;
+
+        // ✅ SADECE HEADER İÇİN: name Firestore'dan canlı dinlensin
+        final userDocStream = FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .snapshots();
+
+        // fallback (Firestore gelene kadar)
+        final fallback = (user.displayName ?? "Athlete").trim();
+        final fallbackFirstName =
+            fallback.isNotEmpty ? fallback.split(" ").first : "Athlete";
+
+        return Scaffold(
+          backgroundColor: const Color(0xFF0B0E1A),
+          body: Stack(
             children: [
-              // ================= HEADER =================
-              Padding(
-                padding: const EdgeInsets.fromLTRB(24, 60, 24, 20),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(28),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-                    child: Container(
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.08),
-                        borderRadius: BorderRadius.circular(28),
-                        border: Border.all(
-                          color: Colors.white.withOpacity(0.15),
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              CircleAvatar(
-                                radius: 26,
-                                backgroundColor: Colors.white24,
-                                child: Text(
-                                  name[0],
-                                  style: const TextStyle(
-                                    fontSize: 22,
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
+              // BACKGROUND GLOW
+              Positioned(
+                top: -120,
+                left: -80,
+                child: _GlowCircle(color: Colors.purpleAccent),
+              ),
+              Positioned(
+                bottom: -140,
+                right: -100,
+                child: _GlowCircle(color: Colors.cyanAccent),
+              ),
+
+              ListView(
+                padding: EdgeInsets.zero,
+                children: [
+                  // ================= HEADER =================
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(24, 60, 24, 20),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(28),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
+                        child: Container(
+                          padding: const EdgeInsets.all(24),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.08),
+                            borderRadius: BorderRadius.circular(28),
+                            border: Border.all(
+                              color: Colors.white.withOpacity(0.15),
+                            ),
+                          ),
+                          child: StreamBuilder<
+                              DocumentSnapshot<Map<String, dynamic>>>(
+                            stream: userDocStream,
+                            builder: (context, userSnap) {
+                              final data = userSnap.data?.data() ?? {};
+                              final firestoreName =
+                                  (data['name'] as String?)?.trim() ?? "";
+
+                              final fullName = firestoreName.isNotEmpty
+                                  ? firestoreName
+                                  : fallback;
+
+                              final firstName = fullName.isNotEmpty
+                                  ? fullName.split(" ").first
+                                  : "Athlete";
+
+                              final avatarLetter = firstName.isNotEmpty
+                                  ? firstName[0]
+                                  : (fallbackFirstName.isNotEmpty
+                                      ? fallbackFirstName[0]
+                                      : "A");
+
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      CircleAvatar(
+                                        radius: 26,
+                                        backgroundColor: Colors.white24,
+                                        child: Text(
+                                          avatarLetter,
+                                          style: const TextStyle(
+                                            fontSize: 22,
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                      const Spacer(),
+                                      IconButton(
+                                        icon: const Icon(
+                                          Icons.power_settings_new,
+                                          color: Colors.redAccent,
+                                        ),
+                                        onPressed: _logout,
+                                      ),
+                                    ],
                                   ),
-                                ),
-                              ),
-                              const Spacer(),
-                              IconButton(
-                                icon: const Icon(
-                                  Icons.power_settings_new,
-                                  color: Colors.redAccent,
-                                ),
-                                onPressed: _logout,
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 18),
-                          Text(
-                            "Welcome back,",
-                            style: TextStyle(
-                              color: Colors.white.withOpacity(0.7),
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            name,
-                            style: const TextStyle(
-                              fontSize: 26,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                          const SizedBox(height: 14),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 18, vertical: 10),
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [
-                                  Color(0xFF8E2DE2),
-                                  Color(0xFF4A00E0),
+                                  const SizedBox(height: 18),
+                                  Text(
+                                    "Welcome back,",
+                                    style: TextStyle(
+                                      color: Colors.white.withOpacity(0.7),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    firstName,
+                                    style: const TextStyle(
+                                      fontSize: 26,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 14),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 18, vertical: 10),
+                                    decoration: BoxDecoration(
+                                      gradient: const LinearGradient(
+                                        colors: [
+                                          Color(0xFF8E2DE2),
+                                          Color(0xFF4A00E0),
+                                        ],
+                                      ),
+                                      borderRadius: BorderRadius.circular(20),
+                                    ),
+                                    child: const Text(
+                                      "🔥 Consistency is power",
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                  ),
                                 ],
+                              );
+                            },
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 30),
+
+                  // ================= ACTIONS =================
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _ActionTile(
+                            title: "Body Analysis",
+                            subtitle: "BMI & metrics",
+                            icon: Icons.monitor_weight_outlined,
+                            gradient: const [
+                              Color(0xFF00C6FF),
+                              Color(0xFF0072FF),
+                            ],
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => const BmiPage()),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: _ActionTile(
+                            title: "Training",
+                            subtitle: "AI workout",
+                            icon: Icons.fitness_center,
+                            gradient: const [
+                              Color(0xFFFF512F),
+                              Color(0xFFF09819),
+                            ],
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const ProgramBuilderPage(),
                               ),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: const Text(
-                              "🔥 Consistency is power",
-                              style: TextStyle(color: Colors.white),
                             ),
                           ),
-                        ],
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 40),
+
+                  // ================= DAILY PERFORMANCE =================
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: const Text(
+                      "Daily Performance",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
-                ),
-              ),
+                  const SizedBox(height: 18),
 
-              const SizedBox(height: 30),
-
-              // ================= ACTIONS =================
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _ActionTile(
-                        title: "Body Analysis",
-                        subtitle: "BMI & metrics",
-                        icon: Icons.monitor_weight_outlined,
-                        gradient: const [
-                          Color(0xFF00C6FF),
-                          Color(0xFF0072FF),
-                        ],
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (_) => const BmiPage()),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _ActionTile(
-                        title: "Training",
-                        subtitle: "AI workout",
-                        icon: Icons.fitness_center,
-                        gradient: const [
-                          Color(0xFFFF512F),
-                          Color(0xFFF09819),
-                        ],
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const ProgramBuilderPage(),
+                  // ✅ Burası artık stream rebuild yemez
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _StatWrapper(
+                            height: 190,
+                            child: CounterBox(
+                              color: Colors.deepPurpleAccent,
+                              userId: user.uid,
+                            ),
                           ),
                         ),
-                      ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: _StatWrapper(
+                            height: 190,
+                            child: WaterTrackerBox(
+                              color: Colors.cyanAccent,
+                              userId: user.uid,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 40),
-
-              // ================= DAILY PERFORMANCE =================
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: const Text(
-                  "Daily Performance",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
                   ),
-                ),
-              ),
-              const SizedBox(height: 18),
 
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _StatWrapper(
-                        height: 190,
-                        child: CounterBox(
-                          color: Colors.deepPurpleAccent,
-                          userId: user.uid,
-                        ),
-                      ),
+                  const SizedBox(height: 50),
+                  const Center(
+                    child: Text(
+                      "Built for consistency. Designed for winners.",
+                      style: TextStyle(color: Colors.white30, fontSize: 12),
                     ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: _StatWrapper(
-                        height: 190,
-                        child: WaterTrackerBox(
-                          color: Colors.cyanAccent,
-                          userId: user.uid,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 40),
+                ],
               ),
-
-              const SizedBox(height: 50),
-              const Center(
-                child: Text(
-                  "Built for consistency. Designed for winners.",
-                  style: TextStyle(color: Colors.white30, fontSize: 12),
-                ),
-              ),
-              const SizedBox(height: 40),
             ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
