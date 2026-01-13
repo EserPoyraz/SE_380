@@ -13,8 +13,10 @@ class ProfilePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final uid = FirebaseAuth.instance.currentUser!.uid;
 
-    final userDocStream =
-        FirebaseFirestore.instance.collection('users').doc(uid).snapshots();
+    final userDocStream = FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .snapshots();
 
     return Scaffold(
       backgroundColor: AppTheme.background,
@@ -33,7 +35,8 @@ class ProfilePage extends StatelessWidget {
 
             final data = snap.data!.data() ?? {};
             final name = (data['name'] as String?) ?? "User";
-            final email = (data['email'] as String?) ??
+            final email =
+                (data['email'] as String?) ??
                 (FirebaseAuth.instance.currentUser?.email ?? "");
             final photoUrl = (data['photoUrl'] as String?) ?? "";
 
@@ -54,8 +57,8 @@ class ProfilePage extends StatelessWidget {
               bmi = weightKg / (m * m);
             }
 
-            final currentProgram =
-                (data['currentProgram'] as Map?)?.cast<String, dynamic>();
+            final currentProgram = (data['currentProgram'] as Map?)
+                ?.cast<String, dynamic>();
 
             return ListView(
               padding: const EdgeInsets.all(16),
@@ -84,7 +87,7 @@ class ProfilePage extends StatelessWidget {
                       child: _MiniStatCard(
                         title: "Sets",
                         value: "$sets",
-                        subtitle: "Completed",
+                        subtitle: "Complete",
                         icon: Icons.fitness_center,
                       ),
                     ),
@@ -130,7 +133,9 @@ class ProfilePage extends StatelessWidget {
                             const Spacer(),
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 6),
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
                               decoration: BoxDecoration(
                                 color: Colors.white.withOpacity(0.08),
                                 borderRadius: BorderRadius.circular(999),
@@ -148,12 +153,18 @@ class ProfilePage extends StatelessWidget {
                           ],
                         ),
                         const SizedBox(height: 12),
-                        _metricRow("BMI",
-                            bmi == null ? "-" : bmi.toStringAsFixed(1)),
-                        _metricRow("Height",
-                            heightCm == null ? "-" : "${heightCm.toInt()} cm"),
-                        _metricRow("Weight",
-                            weightKg == null ? "-" : "${weightKg.toInt()} kg"),
+                        _metricRow(
+                          "BMI",
+                          bmi == null ? "-" : bmi.toStringAsFixed(1),
+                        ),
+                        _metricRow(
+                          "Height",
+                          heightCm == null ? "-" : "${heightCm.toInt()} cm",
+                        ),
+                        _metricRow(
+                          "Weight",
+                          weightKg == null ? "-" : "${weightKg.toInt()} kg",
+                        ),
                       ],
                     ),
                   ),
@@ -172,10 +183,7 @@ class ProfilePage extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
 
-                _ProgramCard(
-                  uid: uid,
-                  currentProgram: currentProgram,
-                ),
+                _ProgramCard(uid: uid, currentProgram: currentProgram),
 
                 const SizedBox(height: 14),
 
@@ -291,8 +299,9 @@ class _HeaderCard extends StatelessWidget {
             CircleAvatar(
               radius: 26,
               backgroundColor: Colors.white24,
-              backgroundImage:
-                  photoUrl.trim().isNotEmpty ? NetworkImage(photoUrl) : null,
+              backgroundImage: photoUrl.trim().isNotEmpty
+                  ? NetworkImage(photoUrl)
+                  : null,
               child: photoUrl.trim().isEmpty
                   ? Text(
                       name.isNotEmpty ? name[0] : "U",
@@ -433,10 +442,7 @@ class _MiniStatCard extends StatelessWidget {
 }
 
 class _ProgramCard extends StatelessWidget {
-  const _ProgramCard({
-    required this.uid,
-    required this.currentProgram,
-  });
+  const _ProgramCard({required this.uid, required this.currentProgram});
 
   final String uid;
   final Map<String, dynamic>? currentProgram;
@@ -538,7 +544,11 @@ class _ProgramCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        [goal, split, location].where((e) => e.isNotEmpty).join(" • "),
+                        [
+                          goal,
+                          split,
+                          location,
+                        ].where((e) => e.isNotEmpty).join(" • "),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(color: Colors.white.withOpacity(0.6)),
@@ -547,8 +557,10 @@ class _ProgramCard extends StatelessWidget {
                   ),
                 ),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.08),
                     borderRadius: BorderRadius.circular(999),
@@ -618,9 +630,15 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
     super.initState();
     _name = TextEditingController(text: widget.initialName);
     _height = TextEditingController(
-        text: widget.initialHeight == null ? "" : widget.initialHeight!.toStringAsFixed(0));
+      text: widget.initialHeight == null
+          ? ""
+          : widget.initialHeight!.toStringAsFixed(0),
+    );
     _weight = TextEditingController(
-        text: widget.initialWeight == null ? "" : widget.initialWeight!.toStringAsFixed(0));
+      text: widget.initialWeight == null
+          ? ""
+          : widget.initialWeight!.toStringAsFixed(0),
+    );
     _sets = TextEditingController(text: widget.initialSets.toString());
     _water = TextEditingController(text: widget.initialWater.toString());
   }
@@ -658,9 +676,7 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
       bmi = w / (m * m);
     }
 
-    final update = <String, dynamic>{
-      'name': name,
-    };
+    final update = <String, dynamic>{'name': name};
 
     if (h != null && h > 0) update['height'] = h;
     if (w != null && w > 0) update['weight'] = w;
@@ -744,11 +760,19 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
                 Row(
                   children: [
                     Expanded(
-                      child: _field("Height (cm)", _height, TextInputType.number),
+                      child: _field(
+                        "Height (cm)",
+                        _height,
+                        TextInputType.number,
+                      ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
-                      child: _field("Weight (kg)", _weight, TextInputType.number),
+                      child: _field(
+                        "Weight (kg)",
+                        _weight,
+                        TextInputType.number,
+                      ),
                     ),
                   ],
                 ),
@@ -796,7 +820,10 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
   }
 
   Widget _field(
-      String label, TextEditingController c, TextInputType keyboardType) {
+    String label,
+    TextEditingController c,
+    TextInputType keyboardType,
+  ) {
     return TextField(
       controller: c,
       keyboardType: keyboardType,

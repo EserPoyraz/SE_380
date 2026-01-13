@@ -26,7 +26,7 @@ class AiWorkoutGenerator {
 
     final prompt =
         '''
-Sen bir fitness koçusun. Aşağıdaki bilgilere göre 3-6 günlük antrenman programı üret.
+Sen bir fitness koçusun. Aşağıdaki bilgilere göre 3-6 günlük antrenman programı üret. Bu program 1 haftalık olacak ve kullanıcı her hafta tekrar edecek.
 
 Girdiler:
 - Konum: $location

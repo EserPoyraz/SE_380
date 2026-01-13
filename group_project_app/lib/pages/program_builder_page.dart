@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -19,19 +20,19 @@ class ProgramBuilderPage extends StatefulWidget {
 
 class _ProgramBuilderPageState extends State<ProgramBuilderPage>
     with SingleTickerProviderStateMixin {
+  // tabs and controllers
   late final TabController _tab;
 
   final _heightCtrl = TextEditingController();
   final _weightCtrl = TextEditingController();
 
+  // user selections state
   String _location = 'Home';
   String _split = 'Push/Pull/Legs';
   String _goal = 'Strength';
 
+  // loading and services
   bool _busy = false;
-
-  String _lastTitle = 'AI Program';
-  Map<String, dynamic> _lastDays = {};
 
   final ProgramRepository _repo = ProgramRepository();
   final AiWorkoutGenerator _generator = const AiWorkoutGenerator();
@@ -50,36 +51,60 @@ class _ProgramBuilderPageState extends State<ProgramBuilderPage>
     super.dispose();
   }
 
+  // snack message helper
   void _snack(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg)),
+      SnackBar(
+        backgroundColor: AppTheme.surface.withOpacity(0.95),
+        content: Text(msg, style: const TextStyle(color: Colors.white)),
+      ),
     );
   }
-  Future<bool> _confirmDelete(String title) async {
-  final ok = await showDialog<bool>(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: const Text("Delete program?"),
-      content: Text('"$title" will be permanently deleted.'),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, false),
-          child: const Text("Cancel"),
-        ),
-        ElevatedButton(
-          onPressed: () => Navigator.pop(context, true),
-          child: const Text("Delete"),
-        ),
-      ],
-    ),
-  );
-  return ok ?? false;
-}
 
-  double? _parseNum(TextEditingController c) {
-    return double.tryParse(c.text.replaceAll(',', '.'));
+  // delete confirmation dialog
+  Future<bool> _confirmDelete(String title) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      barrierColor: Colors.black.withOpacity(0.55),
+      builder: (context) => AlertDialog(
+        backgroundColor: AppTheme.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        title: const Text(
+          "Delete program?",
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800),
+        ),
+        content: Text(
+          '"$title" will be permanently deleted.',
+          style: const TextStyle(color: Colors.white70),
+        ),
+        actions: [
+          TextButton(
+            style: TextButton.styleFrom(foregroundColor: Colors.white),
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppTheme.neonOrange.withOpacity(0.9),
+              foregroundColor: Colors.black,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Delete"),
+          ),
+        ],
+      ),
+    );
+    return ok ?? false;
   }
 
+  double? _parseNum(TextEditingController c) {
+    return double.tryParse(c.text.trim().replaceAll(',', '.'));
+  }
+
+  // ai generation flow
   Future<void> _generateWithAiAndSave() async {
     if (_busy) return;
 
@@ -104,11 +129,6 @@ class _ProgramBuilderPageState extends State<ProgramBuilderPage>
           )
           .timeout(const Duration(seconds: 40));
 
-      setState(() {
-        _lastTitle = result.title;
-        _lastDays = result.days;
-      });
-
       await _repo.saveProgram(
         title: result.title,
         location: _location,
@@ -127,10 +147,10 @@ class _ProgramBuilderPageState extends State<ProgramBuilderPage>
           'split': _split,
           'location': _location,
           'updatedAt': FieldValue.serverTimestamp(),
-        }
+        },
       });
 
-      _snack('Program saved successfully 💪');
+      _snack('Program saved successfully');
       _tab.animateTo(1);
     } on TimeoutException {
       _snack('Request timed out. Please try again.');
@@ -140,35 +160,67 @@ class _ProgramBuilderPageState extends State<ProgramBuilderPage>
       if (mounted) setState(() => _busy = false);
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppTheme.background,
-      appBar: AppBar(
-        title: const Text('Program Builder'),
-        bottom: TabBar(
-          controller: _tab,
-          tabs: const [
-            Tab(text: 'Create'),
-            Tab(text: 'Saved'),
-          ],
+    final base = Theme.of(context);
+
+    final pageTheme = base.copyWith(
+      textTheme: base.textTheme.apply(
+        bodyColor: Colors.white,
+        displayColor: Colors.white,
+      ),
+      iconTheme: base.iconTheme.copyWith(color: Colors.white),
+      appBarTheme: base.appBarTheme.copyWith(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        foregroundColor: Colors.white,
+        iconTheme: const IconThemeData(color: Colors.white),
+        titleTextStyle: const TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.w800,
+          fontSize: 18,
         ),
       ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: AppTheme.backgroundGradient,
+      tabBarTheme: base.tabBarTheme.copyWith(
+        labelColor: Colors.white,
+        unselectedLabelColor: Colors.white70,
+        indicatorColor: AppTheme.neonPurple,
+        labelStyle: const TextStyle(fontWeight: FontWeight.w800),
+        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.w700),
+        dividerColor: Colors.white10,
+      ),
+    );
+
+    // page layout scaffold
+    return Theme(
+      data: pageTheme,
+      child: Scaffold(
+        backgroundColor: AppTheme.background,
+        appBar: AppBar(
+          title: const Text('Program Builder'),
+          bottom: TabBar(
+            controller: _tab,
+            tabs: const [
+              Tab(text: 'Create'),
+              Tab(text: 'Saved'),
+            ],
+          ),
         ),
-        child: TabBarView(
-          controller: _tab,
-          children: [_buildCreateTab(), _buildSavedTab()],
+        body: Container(
+          decoration: const BoxDecoration(
+            gradient: AppTheme.backgroundGradient,
+          ),
+          child: TabBarView(
+            controller: _tab,
+            children: [_buildCreateTab(), _buildSavedTab()],
+          ),
         ),
       ),
     );
   }
 
-  // ================= CREATE TAB =================
-
+  // create tab widgets
   Widget _buildCreateTab() {
     return ListView(
       padding: const EdgeInsets.all(20),
@@ -204,6 +256,7 @@ class _ProgramBuilderPageState extends State<ProgramBuilderPage>
     );
   }
 
+  // measurement input card
   Widget _inputCard() {
     return AppCard(
       child: Column(
@@ -219,10 +272,16 @@ class _ProgramBuilderPageState extends State<ProgramBuilderPage>
   Widget _numberField(String label, TextEditingController c) {
     return TextField(
       controller: c,
-      keyboardType: TextInputType.number,
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      inputFormatters: [
+        FilteringTextInputFormatter.allow(RegExp(r'^\d*([.,]\d*)?$')),
+      ],
       style: const TextStyle(color: Colors.white),
+      cursorColor: Colors.white,
       decoration: InputDecoration(
         labelText: label,
+        labelStyle: const TextStyle(color: Colors.white),
+        floatingLabelStyle: const TextStyle(color: Colors.white),
         filled: true,
         fillColor: AppTheme.surface.withOpacity(0.8),
         border: OutlineInputBorder(
@@ -233,6 +292,7 @@ class _ProgramBuilderPageState extends State<ProgramBuilderPage>
     );
   }
 
+  // option selection cards
   Widget _choiceCard(
     String title,
     List<String> items,
@@ -243,7 +303,14 @@ class _ProgramBuilderPageState extends State<ProgramBuilderPage>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: Theme.of(context).textTheme.titleMedium),
+          Text(
+            title,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w800,
+              fontSize: 16,
+            ),
+          ),
           const SizedBox(height: 12),
           Wrap(
             spacing: 10,
@@ -255,12 +322,21 @@ class _ProgramBuilderPageState extends State<ProgramBuilderPage>
                     child: AppCard(
                       glow: selected == e,
                       glowColor: AppTheme.neonPurple,
-                      child: Text(
-                        e,
-                        style: TextStyle(
-                          color: selected == e
-                              ? Colors.white
-                              : Colors.white70,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        child: Text(
+                          e,
+                          style: TextStyle(
+                            color: selected == e
+                                ? Colors.white
+                                : Colors.white.withOpacity(0.80),
+                            fontWeight: selected == e
+                                ? FontWeight.w800
+                                : FontWeight.w700,
+                          ),
                         ),
                       ),
                     ),
@@ -273,19 +349,25 @@ class _ProgramBuilderPageState extends State<ProgramBuilderPage>
     );
   }
 
-  // ================= SAVED TAB =================
-
+  // saved programs stream
   Widget _buildSavedTab() {
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
       stream: _repo.watchPrograms(),
       builder: (context, snap) {
         if (!snap.hasData) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(
+            child: CircularProgressIndicator(color: Colors.white),
+          );
         }
 
         final docs = snap.data!.docs;
         if (docs.isEmpty) {
-          return const Center(child: Text('No saved programs'));
+          return const Center(
+            child: Text(
+              'No saved programs',
+              style: TextStyle(color: Colors.white),
+            ),
+          );
         }
 
         return ListView.separated(
@@ -294,6 +376,8 @@ class _ProgramBuilderPageState extends State<ProgramBuilderPage>
           separatorBuilder: (_, __) => const SizedBox(height: 12),
           itemBuilder: (context, i) {
             final d = docs[i].data();
+            final title = (d['title'] as String?) ?? 'Program';
+
             return AppCard(
               child: ListTile(
                 contentPadding: const EdgeInsets.symmetric(
@@ -301,7 +385,7 @@ class _ProgramBuilderPageState extends State<ProgramBuilderPage>
                   vertical: 12,
                 ),
                 title: Text(
-                  d['title'] ?? 'Program',
+                  title,
                   style: const TextStyle(
                     color: Colors.white,
                     fontWeight: FontWeight.bold,
@@ -311,11 +395,8 @@ class _ProgramBuilderPageState extends State<ProgramBuilderPage>
                 subtitle: Padding(
                   padding: const EdgeInsets.only(top: 4),
                   child: Text(
-                    d['goal'] ?? '',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.7),
-                      fontSize: 13,
-                    ),
+                    (d['goal'] as String?) ?? '',
+                    style: const TextStyle(color: Colors.white70, fontSize: 13),
                   ),
                 ),
                 trailing: Row(
@@ -323,39 +404,37 @@ class _ProgramBuilderPageState extends State<ProgramBuilderPage>
                   children: [
                     IconButton(
                       icon: const Icon(Icons.delete_outline),
-                      color: Colors.white.withOpacity(0.7),
+                      color: Colors.white,
                       onPressed: () async {
+                        final ok = await _confirmDelete(title);
+                        if (!ok) return;
+
                         final uid = FirebaseAuth.instance.currentUser!.uid;
 
-                        // 1) önce programı sil
                         await _repo.deleteProgram(docs[i].id);
 
-                        // 2) eğer bu silinen program currentProgram ise temizle
-                        final userRef =
-                            FirebaseFirestore.instance.collection('users').doc(uid);
+                        final userRef = FirebaseFirestore.instance
+                            .collection('users')
+                            .doc(uid);
                         final userSnap = await userRef.get();
                         final userData = userSnap.data() ?? {};
-                        final current =
-                            (userData['currentProgram'] as Map?)?.cast<String, dynamic>();
+                        final current = (userData['currentProgram'] as Map?)
+                            ?.cast<String, dynamic>();
 
-                        final currentTitle = (current?['title'] as String?) ?? "";
-                        final deletedTitle = (d['title'] as String?) ?? "";
-
-                        if (currentTitle.isNotEmpty && currentTitle == deletedTitle) {
-                          await userRef.update({'currentProgram': FieldValue.delete()});
+                        final currentTitle =
+                            (current?['title'] as String?) ?? "";
+                        if (currentTitle.isNotEmpty && currentTitle == title) {
+                          await userRef.update({
+                            'currentProgram': FieldValue.delete(),
+                          });
                         }
 
                         if (context.mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text("Program deleted")),
-                          );
+                          _snack("Program deleted");
                         }
                       },
                     ),
-                    Icon(
-                      Icons.chevron_right,
-                      color: Colors.white.withOpacity(0.6),
-                    ),
+                    const Icon(Icons.chevron_right, color: Colors.white),
                   ],
                 ),
                 onTap: () {

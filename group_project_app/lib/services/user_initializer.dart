@@ -6,12 +6,10 @@ class UserInitializer {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    final ref =
-        FirebaseFirestore.instance.collection('users').doc(user.uid);
+    final ref = FirebaseFirestore.instance.collection('users').doc(user.uid);
 
     final snap = await ref.get();
 
-    // 🔥 SADECE YOKSA OLUŞTUR
     if (!snap.exists) {
       await ref.set({
         'name': user.displayName ?? 'User',
@@ -27,9 +25,7 @@ class UserInitializer {
       });
     } else {
       // 🔹 SADECE metadata güncelle
-      await ref.update({
-        'lastActiveAt': FieldValue.serverTimestamp(),
-      });
+      await ref.update({'lastActiveAt': FieldValue.serverTimestamp()});
     }
   }
 }
