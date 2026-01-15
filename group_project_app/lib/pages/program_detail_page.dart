@@ -4,11 +4,7 @@ class ProgramDetailPage extends StatelessWidget {
   final String title;
   final Map<String, dynamic> days;
 
-  const ProgramDetailPage({
-    super.key,
-    required this.title,
-    required this.days,
-  });
+  const ProgramDetailPage({super.key, required this.title, required this.days});
 
   @override
   Widget build(BuildContext context) {
@@ -19,9 +15,11 @@ class ProgramDetailPage extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
         title: Text(
           title,
           style: const TextStyle(
+            color: Colors.white,
             fontWeight: FontWeight.bold,
             letterSpacing: 0.5,
           ),
@@ -32,10 +30,7 @@ class ProgramDetailPage extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFF0B0F1A),
-              Color(0xFF141A2E),
-            ],
+            colors: [Color(0xFF0B0F1A), Color(0xFF141A2E)],
           ),
         ),
         child: ListView.builder(
@@ -46,8 +41,8 @@ class ProgramDetailPage extends StatelessWidget {
             final dayObj = (entries[i].value as Map).cast<String, dynamic>();
 
             final focus = (dayObj['focus'] ?? '').toString();
-            final exercises =
-                (dayObj['exercises'] as List? ?? const []).cast<dynamic>();
+            final exercises = (dayObj['exercises'] as List? ?? const [])
+                .cast<dynamic>();
 
             return _DayGlassCard(
               dayName: dayName,
@@ -104,12 +99,7 @@ class _DayGlassCard extends StatelessWidget {
 
           if (focus.isNotEmpty) ...[
             const SizedBox(height: 4),
-            Text(
-              focus,
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.7),
-              ),
-            ),
+            Text(focus, style: const TextStyle(color: Colors.white)),
           ],
 
           const SizedBox(height: 14),
@@ -135,17 +125,11 @@ class _DayGlassCard extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    '• ',
-                    style: TextStyle(color: Colors.white70),
-                  ),
+                  const Text('• ', style: TextStyle(color: Colors.white)),
                   Expanded(
                     child: Text(
                       '$name — $sets x $reps$restText$noteText',
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        height: 1.4,
-                      ),
+                      style: const TextStyle(color: Colors.white, height: 1.4),
                     ),
                   ),
                 ],

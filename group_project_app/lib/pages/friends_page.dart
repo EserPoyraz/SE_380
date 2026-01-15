@@ -8,17 +8,20 @@ class FriendsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final me = FirebaseAuth.instance.currentUser!;
-    final userDocStream =
-        FirebaseFirestore.instance.collection('users').doc(me.uid).snapshots();
+    final userDocStream = FirebaseFirestore.instance
+        .collection('users')
+        .doc(me.uid)
+        .snapshots();
 
     return Scaffold(
       backgroundColor: const Color(0xFF0B0E1A),
       appBar: AppBar(
         backgroundColor: const Color(0xFF0B0E1A),
-        title: const Text("Friends"),
+        foregroundColor: Colors.white, // makes title and icons white
+        title: const Text("Friends", style: TextStyle(color: Colors.white)),
         actions: [
           IconButton(
-            icon: const Icon(Icons.person_add_alt_1),
+            icon: const Icon(Icons.person_add_alt_1, color: Colors.white),
             onPressed: () => showModalBottomSheet(
               context: context,
               isScrollControlled: true,
@@ -33,8 +36,10 @@ class FriendsPage extends StatelessWidget {
         builder: (context, snap) {
           if (snap.hasError) {
             return const Center(
-              child: Text("Error loading friends",
-                  style: TextStyle(color: Colors.white)),
+              child: Text(
+                "Error loading friends",
+                style: TextStyle(color: Colors.white),
+              ),
             );
           }
           if (!snap.hasData) {
@@ -108,7 +113,6 @@ class _RequestsList extends StatefulWidget {
 
 class _RequestsListState extends State<_RequestsList> {
   Future<void> _accept(String fromUid) async {
-    // ✅ messenger'ı async öncesi yakala (context defunct hatasını keser)
     final messenger = ScaffoldMessenger.maybeOf(context);
 
     try {
@@ -139,9 +143,7 @@ class _RequestsListState extends State<_RequestsList> {
       );
     } catch (e) {
       if (!mounted) return;
-      messenger?.showSnackBar(
-        SnackBar(content: Text("Accept failed: $e")),
-      );
+      messenger?.showSnackBar(SnackBar(content: Text("Accept failed: $e")));
     }
   }
 
@@ -172,9 +174,7 @@ class _RequestsListState extends State<_RequestsList> {
       );
     } catch (e) {
       if (!mounted) return;
-      messenger?.showSnackBar(
-        SnackBar(content: Text("Decline failed: $e")),
-      );
+      messenger?.showSnackBar(SnackBar(content: Text("Decline failed: $e")));
     }
   }
 
@@ -214,7 +214,6 @@ class _RequestsListState extends State<_RequestsList> {
               child: _UserInfoCard(
                 name: name,
                 photoUrl: photoUrl,
-                // ✅ request ekranında info yok
                 showStats: false,
                 trailing: ConstrainedBox(
                   constraints: const BoxConstraints(minWidth: 140),
@@ -275,24 +274,25 @@ class _FriendsList extends StatelessWidget {
       final targetRef = db.collection('users').doc(targetUid);
 
       final batch = db.batch();
-      batch.update(myRef, {'friends': FieldValue.arrayRemove([targetUid])});
-      batch.update(targetRef, {'friends': FieldValue.arrayRemove([me.uid])});
+      batch.update(myRef, {
+        'friends': FieldValue.arrayRemove([targetUid]),
+      });
+      batch.update(targetRef, {
+        'friends': FieldValue.arrayRemove([me.uid]),
+      });
       await batch.commit();
 
-      messenger?.showSnackBar(
-        const SnackBar(content: Text("Friend removed")),
-      );
+      messenger?.showSnackBar(const SnackBar(content: Text("Friend removed")));
     } catch (e) {
-      messenger?.showSnackBar(
-        SnackBar(content: Text("Remove failed: $e")),
-      );
+      messenger?.showSnackBar(SnackBar(content: Text("Remove failed: $e")));
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final ids =
-        friendUids.length > 10 ? friendUids.take(10).toList() : friendUids;
+    final ids = friendUids.length > 10
+        ? friendUids.take(10).toList()
+        : friendUids;
 
     final q = FirebaseFirestore.instance
         .collection('users')
@@ -302,8 +302,10 @@ class _FriendsList extends StatelessWidget {
       stream: q.snapshots(),
       builder: (context, snap) {
         if (snap.hasError) {
-          return const Text("Error loading friends",
-              style: TextStyle(color: Colors.white));
+          return const Text(
+            "Error loading friends",
+            style: TextStyle(color: Colors.white),
+          );
         }
         if (!snap.hasData) {
           return const Center(child: CircularProgressIndicator());
@@ -396,14 +398,10 @@ class _AddFriendSheetState extends State<_AddFriendSheet> {
       await batch.commit();
 
       if (!mounted) return;
-      messenger?.showSnackBar(
-        const SnackBar(content: Text("Request sent")),
-      );
+      messenger?.showSnackBar(const SnackBar(content: Text("Request sent")));
     } catch (e) {
       if (!mounted) return;
-      messenger?.showSnackBar(
-        SnackBar(content: Text("Request failed: $e")),
-      );
+      messenger?.showSnackBar(SnackBar(content: Text("Request failed: $e")));
     }
   }
 
@@ -434,9 +432,7 @@ class _AddFriendSheetState extends State<_AddFriendSheet> {
       );
     } catch (e) {
       if (!mounted) return;
-      messenger?.showSnackBar(
-        SnackBar(content: Text("Cancel failed: $e")),
-      );
+      messenger?.showSnackBar(SnackBar(content: Text("Cancel failed: $e")));
     }
   }
 
@@ -445,16 +441,20 @@ class _AddFriendSheetState extends State<_AddFriendSheet> {
     final me = FirebaseAuth.instance.currentUser!;
     final bottom = MediaQuery.of(context).viewInsets.bottom;
 
-    final myDocStream =
-        FirebaseFirestore.instance.collection('users').doc(me.uid).snapshots();
+    final myDocStream = FirebaseFirestore.instance
+        .collection('users')
+        .doc(me.uid)
+        .snapshots();
 
     return StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
       stream: myDocStream,
       builder: (context, mySnap) {
         if (mySnap.hasError) {
           return const Center(
-            child: Text("Error loading profile",
-                style: TextStyle(color: Colors.white)),
+            child: Text(
+              "Error loading profile",
+              style: TextStyle(color: Colors.white),
+            ),
           );
         }
         if (!mySnap.hasData) {
@@ -468,8 +468,9 @@ class _AddFriendSheetState extends State<_AddFriendSheet> {
         final outgoing =
             (myData['outgoingRequests'] as List?)?.cast<String>() ?? [];
 
-        Query<Map<String, dynamic>> base =
-            FirebaseFirestore.instance.collection('users').orderBy('name');
+        Query<Map<String, dynamic>> base = FirebaseFirestore.instance
+            .collection('users')
+            .orderBy('name');
 
         Query<Map<String, dynamic>> query = base;
         final s = _q.trim();
@@ -484,8 +485,9 @@ class _AddFriendSheetState extends State<_AddFriendSheet> {
           child: Container(
             decoration: BoxDecoration(
               color: const Color(0xFF0B0E1A),
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(22)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(22),
+              ),
               border: Border.all(color: Colors.white12),
             ),
             child: SafeArea(
@@ -512,8 +514,10 @@ class _AddFriendSheetState extends State<_AddFriendSheet> {
                       decoration: InputDecoration(
                         hintText: "Search users by name...",
                         hintStyle: const TextStyle(color: Colors.white54),
-                        prefixIcon:
-                            const Icon(Icons.search, color: Colors.white54),
+                        prefixIcon: const Icon(
+                          Icons.search,
+                          color: Colors.white54,
+                        ),
                         filled: true,
                         fillColor: Colors.white.withOpacity(0.06),
                         border: OutlineInputBorder(
@@ -531,24 +535,29 @@ class _AddFriendSheetState extends State<_AddFriendSheet> {
                       builder: (context, snap) {
                         if (snap.hasError) {
                           return const Center(
-                            child: Text("Search error",
-                                style: TextStyle(color: Colors.white)),
+                            child: Text(
+                              "Search error",
+                              style: TextStyle(color: Colors.white),
+                            ),
                           );
                         }
                         if (!snap.hasData) {
                           return const Center(
-                              child: CircularProgressIndicator());
+                            child: CircularProgressIndicator(),
+                          );
                         }
 
-                        final docs =
-                            snap.data!.docs.where((d) => d.id != me.uid).toList();
+                        final docs = snap.data!.docs
+                            .where((d) => d.id != me.uid)
+                            .toList();
 
                         if (docs.isEmpty) {
                           return Center(
                             child: Text(
                               "No users found",
-                              style:
-                                  TextStyle(color: Colors.white.withOpacity(0.7)),
+                              style: TextStyle(
+                                color: Colors.white.withOpacity(0.7),
+                              ),
                             ),
                           );
                         }
@@ -562,7 +571,8 @@ class _AddFriendSheetState extends State<_AddFriendSheet> {
                             final doc = docs[i];
                             final data = doc.data();
                             final name = (data['name'] as String?) ?? "User";
-                            final photoUrl = (data['photoUrl'] as String?) ?? "";
+                            final photoUrl =
+                                (data['photoUrl'] as String?) ?? "";
 
                             final isFriend = myFriends.contains(doc.id);
                             final isOutgoing = outgoing.contains(doc.id);
@@ -582,7 +592,8 @@ class _AddFriendSheetState extends State<_AddFriendSheet> {
                                 children: [
                                   _pillDisabled("Requested"),
                                   TextButton(
-                                    onPressed: () => _cancelFriendRequest(doc.id),
+                                    onPressed: () =>
+                                        _cancelFriendRequest(doc.id),
                                     child: const Text(
                                       "Cancel",
                                       style: TextStyle(color: Colors.white70),
@@ -607,7 +618,6 @@ class _AddFriendSheetState extends State<_AddFriendSheet> {
                             return _UserInfoCard(
                               name: name,
                               photoUrl: photoUrl,
-                              // ✅ arkadaş değilken bilgi gösterme
                               showStats: false,
                               trailing: trailing,
                             );
@@ -676,8 +686,9 @@ class _UserInfoCard extends StatelessWidget {
           CircleAvatar(
             radius: 18,
             backgroundColor: Colors.white24,
-            backgroundImage:
-                photoUrl.trim().isNotEmpty ? NetworkImage(photoUrl) : null,
+            backgroundImage: photoUrl.trim().isNotEmpty
+                ? NetworkImage(photoUrl)
+                : null,
             child: photoUrl.trim().isEmpty
                 ? Text(
                     name.isNotEmpty ? name[0] : "U",
@@ -700,10 +711,8 @@ class _UserInfoCard extends StatelessWidget {
                     fontSize: 14,
                   ),
                 ),
-
                 if (showStats) ...[
                   const SizedBox(height: 6),
-                  // ✅ 1) program uzun -> 2 satır
                   Text(
                     programTitle,
                     maxLines: 2,
@@ -728,18 +737,17 @@ class _UserInfoCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 10),
-          // ✅ 3) overflow azaltmak için trailing sınırı
-         ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 150),
-              child: Align(
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 150),
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
                 alignment: Alignment.centerRight,
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerRight,
-                  child: trailing,
-                ),
+                child: trailing,
               ),
             ),
+          ),
         ],
       ),
     );

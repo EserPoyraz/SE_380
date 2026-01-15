@@ -26,18 +26,18 @@ class AiWorkoutGenerator {
 
     final prompt =
         '''
-Sen bir fitness koçusun. Aşağıdaki bilgilere göre 3-6 günlük antrenman programı üret. Bu program 1 haftalık olacak ve kullanıcı her hafta tekrar edecek.
+You are a fitness coach. Based on the information below, generate a 3–5 day training program. This program will be for 1 week and the user will repeat it every week. On the days you do not write a workout, write Rest.
 
-Girdiler:
-- Konum: $location
+Inputs:
+- Location: $location
 - Split: $split
-- Hedef: $goal
-- Boy(cm): $heightCm
-- Kilo(kg): $weightKg
+- Goal: $goal
+- Height(cm): $heightCm
+- Weight(kg): $weightKg
 
-ÇIKTI SADECE JSON OLACAK. Başka hiçbir şey yazma.
+THE OUTPUT MUST BE JSON ONLY. Do not write anything else.
 
-JSON formatı TAM olarak şöyle olmalı:
+The JSON format must be EXACTLY like this:
 {
   "title": "string",
   "days": {
@@ -50,13 +50,13 @@ JSON formatı TAM olarak şöyle olmalı:
   }
 }
 
-Kurallar:
-- Split'e göre günleri ayarla (3-6 gün).
-- Gün başına 4-8 egzersiz.
-- Home ise ev ekipmanına uygun yaz (dumbbell/bodyweight).
-- Gym ise barbell/machine da olabilir.
-- Açıklamalar kısa olsun.
-- Herşeyi ingilizce yaz. Kelimesi kelimesine ingilizce olmak zorunda.
+Rules:
+- Adjust the days according to the split (3–6 days).
+- 4–8 exercises per day.
+- If Home, write it suitable for home equipment (dumbbell/bodyweight).
+- If Gym, it can include barbell/machine as well.
+- Keep explanations short.
+- Write everything in English. It must be word-for-word English.
 ''';
 
     final response = await model.generateContent([Content.text(prompt)]);

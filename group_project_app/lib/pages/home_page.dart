@@ -22,7 +22,6 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
-    // ✅ Yeni kullanıcıda Firestore dokümanı oluşmadan UI render olmasın
     _userInitFuture = UserInitializer.ensureUserExists();
   }
 
@@ -57,17 +56,16 @@ class _HomePageState extends State<HomePage> {
         }
 
         final user = FirebaseAuth.instance.currentUser!;
-
-        // ✅ SADECE HEADER İÇİN: name Firestore'dan canlı dinlensin
         final userDocStream = FirebaseFirestore.instance
             .collection('users')
             .doc(user.uid)
             .snapshots();
 
-        // fallback (Firestore gelene kadar)
+        // fallback
         final fallback = (user.displayName ?? "Athlete").trim();
-        final fallbackFirstName =
-            fallback.isNotEmpty ? fallback.split(" ").first : "Athlete";
+        final fallbackFirstName = fallback.isNotEmpty
+            ? fallback.split(" ").first
+            : "Athlete";
 
         return Scaffold(
           backgroundColor: const Color(0xFF0B0E1A),
@@ -104,93 +102,100 @@ class _HomePageState extends State<HomePage> {
                               color: Colors.white.withOpacity(0.15),
                             ),
                           ),
-                          child: StreamBuilder<
-                              DocumentSnapshot<Map<String, dynamic>>>(
-                            stream: userDocStream,
-                            builder: (context, userSnap) {
-                              final data = userSnap.data?.data() ?? {};
-                              final firestoreName =
-                                  (data['name'] as String?)?.trim() ?? "";
+                          child:
+                              StreamBuilder<
+                                DocumentSnapshot<Map<String, dynamic>>
+                              >(
+                                stream: userDocStream,
+                                builder: (context, userSnap) {
+                                  final data = userSnap.data?.data() ?? {};
+                                  final firestoreName =
+                                      (data['name'] as String?)?.trim() ?? "";
 
-                              final fullName = firestoreName.isNotEmpty
-                                  ? firestoreName
-                                  : fallback;
+                                  final fullName = firestoreName.isNotEmpty
+                                      ? firestoreName
+                                      : fallback;
 
-                              final firstName = fullName.isNotEmpty
-                                  ? fullName.split(" ").first
-                                  : "Athlete";
+                                  final firstName = fullName.isNotEmpty
+                                      ? fullName.split(" ").first
+                                      : "Athlete";
 
-                              final avatarLetter = firstName.isNotEmpty
-                                  ? firstName[0]
-                                  : (fallbackFirstName.isNotEmpty
-                                      ? fallbackFirstName[0]
-                                      : "A");
+                                  final avatarLetter = firstName.isNotEmpty
+                                      ? firstName[0]
+                                      : (fallbackFirstName.isNotEmpty
+                                            ? fallbackFirstName[0]
+                                            : "A");
 
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Row(
+                                  return Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
-                                      CircleAvatar(
-                                        radius: 26,
-                                        backgroundColor: Colors.white24,
-                                        child: Text(
-                                          avatarLetter,
-                                          style: const TextStyle(
-                                            fontSize: 22,
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
+                                      Row(
+                                        children: [
+                                          CircleAvatar(
+                                            radius: 26,
+                                            backgroundColor: Colors.white24,
+                                            child: Text(
+                                              avatarLetter,
+                                              style: const TextStyle(
+                                                fontSize: 22,
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
                                           ),
-                                        ),
-                                      ),
-                                      const Spacer(),
-                                      IconButton(
-                                        icon: const Icon(
-                                          Icons.power_settings_new,
-                                          color: Colors.redAccent,
-                                        ),
-                                        onPressed: _logout,
-                                      ),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 18),
-                                  Text(
-                                    "Welcome back,",
-                                    style: TextStyle(
-                                      color: Colors.white.withOpacity(0.7),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Text(
-                                    firstName,
-                                    style: const TextStyle(
-                                      fontSize: 26,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 14),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 18, vertical: 10),
-                                    decoration: BoxDecoration(
-                                      gradient: const LinearGradient(
-                                        colors: [
-                                          Color(0xFF8E2DE2),
-                                          Color(0xFF4A00E0),
+                                          const Spacer(),
+                                          IconButton(
+                                            icon: const Icon(
+                                              Icons.power_settings_new,
+                                              color: Colors.redAccent,
+                                            ),
+                                            onPressed: _logout,
+                                          ),
                                         ],
                                       ),
-                                      borderRadius: BorderRadius.circular(20),
-                                    ),
-                                    child: const Text(
-                                      "🔥 Consistency is power",
-                                      style: TextStyle(color: Colors.white),
-                                    ),
-                                  ),
-                                ],
-                              );
-                            },
-                          ),
+                                      const SizedBox(height: 18),
+                                      Text(
+                                        "Welcome back,",
+                                        style: TextStyle(
+                                          color: Colors.white.withOpacity(0.7),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        firstName,
+                                        style: const TextStyle(
+                                          fontSize: 26,
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 14),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 18,
+                                          vertical: 10,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          gradient: const LinearGradient(
+                                            colors: [
+                                              Color(0xFF8E2DE2),
+                                              Color(0xFF4A00E0),
+                                            ],
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            20,
+                                          ),
+                                        ),
+                                        child: const Text(
+                                          "🔥 Consistency is power",
+                                          style: TextStyle(color: Colors.white),
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              ),
                         ),
                       ),
                     ),
@@ -214,7 +219,9 @@ class _HomePageState extends State<HomePage> {
                             ],
                             onTap: () => Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (_) => const BmiPage()),
+                              MaterialPageRoute(
+                                builder: (_) => const BmiPage(),
+                              ),
                             ),
                           ),
                         ),
@@ -256,7 +263,6 @@ class _HomePageState extends State<HomePage> {
                   ),
                   const SizedBox(height: 18),
 
-                  // ✅ Burası artık stream rebuild yemez
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 24),
                     child: Row(
@@ -334,7 +340,7 @@ class _ActionTile extends StatelessWidget {
               color: gradient.last.withOpacity(0.5),
               blurRadius: 24,
               offset: const Offset(0, 12),
-            )
+            ),
           ],
         ),
         child: Column(
@@ -350,10 +356,7 @@ class _ActionTile extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-            Text(
-              subtitle,
-              style: const TextStyle(color: Colors.white70),
-            ),
+            Text(subtitle, style: const TextStyle(color: Colors.white70)),
           ],
         ),
       ),

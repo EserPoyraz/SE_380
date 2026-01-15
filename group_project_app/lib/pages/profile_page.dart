@@ -9,6 +9,7 @@ import '../widgets/app_button.dart';
 class ProfilePage extends StatelessWidget {
   const ProfilePage({super.key});
 
+  // profile screen scaffold
   @override
   Widget build(BuildContext context) {
     final uid = FirebaseAuth.instance.currentUser!.uid;
@@ -27,7 +28,7 @@ class ProfilePage extends StatelessWidget {
       body: Container(
         decoration: const BoxDecoration(gradient: AppTheme.backgroundGradient),
         child: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
-          stream: userDocStream,
+          stream: userDocStream, // live user document stream
           builder: (context, snap) {
             if (!snap.hasData) {
               return const Center(child: CircularProgressIndicator());
@@ -47,7 +48,6 @@ class ProfilePage extends StatelessWidget {
             final heightCm = (data['height'] as num?)?.toDouble();
             final weightKg = (data['weight'] as num?)?.toDouble();
 
-            // BMI hesap (eğer height/weight varsa)
             double? bmi;
             if (heightCm != null &&
                 heightCm > 0 &&
@@ -71,7 +71,6 @@ class ProfilePage extends StatelessWidget {
                 ),
                 const SizedBox(height: 14),
 
-                // TODAY
                 Text(
                   "Today",
                   style: TextStyle(
@@ -104,7 +103,6 @@ class ProfilePage extends StatelessWidget {
                 ),
                 const SizedBox(height: 14),
 
-                // HEALTH
                 Text(
                   "Health",
                   style: TextStyle(
@@ -172,7 +170,6 @@ class ProfilePage extends StatelessWidget {
 
                 const SizedBox(height: 14),
 
-                // PROGRAM
                 Text(
                   "Program",
                   style: TextStyle(
@@ -187,7 +184,6 @@ class ProfilePage extends StatelessWidget {
 
                 const SizedBox(height: 14),
 
-                // ACTIONS
                 Text(
                   "Actions",
                   style: TextStyle(
@@ -245,6 +241,7 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
+  // key value metric row
   static Widget _metricRow(String k, String v) {
     return Padding(
       padding: const EdgeInsets.only(top: 8),
@@ -268,6 +265,7 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
+  // map bmi to label
   static String _bmiLabel(double bmi) {
     if (bmi < 18.5) return "Low";
     if (bmi < 25) return "Normal";
@@ -289,6 +287,7 @@ class _HeaderCard extends StatelessWidget {
   final int friendsCount;
   final String photoUrl;
 
+  // header card layout
   @override
   Widget build(BuildContext context) {
     return AppCard(
@@ -354,6 +353,7 @@ class _Chip extends StatelessWidget {
   const _Chip({required this.text});
   final String text;
 
+  // small pill chip
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -388,6 +388,7 @@ class _MiniStatCard extends StatelessWidget {
   final String subtitle;
   final IconData icon;
 
+  // compact stat card
   @override
   Widget build(BuildContext context) {
     return AppCard(
@@ -447,6 +448,7 @@ class _ProgramCard extends StatelessWidget {
   final String uid;
   final Map<String, dynamic>? currentProgram;
 
+  // show active program card
   @override
   Widget build(BuildContext context) {
     if (currentProgram == null) {
@@ -474,7 +476,6 @@ class _ProgramCard extends StatelessWidget {
     final split = (currentProgram?['split'] as String?) ?? "";
     final location = (currentProgram?['location'] as String?) ?? "";
 
-    // 🔥 ÖNEMLİ: currentProgram var ama user/programs içinde yoksa stale demektir.
     final q = FirebaseFirestore.instance
         .collection('users')
         .doc(uid)
@@ -483,7 +484,7 @@ class _ProgramCard extends StatelessWidget {
         .limit(1);
 
     return FutureBuilder<QuerySnapshot<Map<String, dynamic>>>(
-      future: q.get(),
+      future: q.get(), // verify program still exists
       builder: (context, snap) {
         final exists = snap.hasData && snap.data!.docs.isNotEmpty;
 
@@ -583,6 +584,7 @@ class _ProgramCard extends StatelessWidget {
     );
   }
 
+  // program icon widget
   static Widget _progIcon() {
     return Container(
       width: 44,
@@ -625,6 +627,7 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
   late final TextEditingController _sets;
   late final TextEditingController _water;
 
+  // init form controllers
   @override
   void initState() {
     super.initState();
@@ -643,6 +646,7 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
     _water = TextEditingController(text: widget.initialWater.toString());
   }
 
+  // dispose form controllers
   @override
   void dispose() {
     _name.dispose();
@@ -653,10 +657,12 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
     super.dispose();
   }
 
+  // parse decimal inputs
   double? _parseDouble(String s) =>
       double.tryParse(s.trim().replaceAll(',', '.'));
   int? _parseInt(String s) => int.tryParse(s.trim());
 
+  // save profile to firestore
   Future<void> _save() async {
     final name = _name.text.trim();
     final h = _parseDouble(_height.text);
@@ -664,7 +670,6 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
     final sets = _parseInt(_sets.text);
     final water = _parseInt(_water.text);
 
-    // basit validasyon
     if (name.isEmpty) {
       _snack("Name cannot be empty");
       return;
@@ -695,6 +700,7 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
     _snack("Profile updated ✅");
   }
 
+  // reset daily stats
   Future<void> _resetSetsWater() async {
     await FirebaseFirestore.instance.collection('users').doc(widget.uid).set({
       'sets': 0,
@@ -709,10 +715,12 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
     _snack("Sets & water reset");
   }
 
+  // show snackbar message
   void _snack(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
+  // bottom sheet content
   @override
   Widget build(BuildContext context) {
     final bottom = MediaQuery.of(context).viewInsets.bottom;
@@ -741,7 +749,6 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
                   ),
                 ),
                 const SizedBox(height: 14),
-
                 const Align(
                   alignment: Alignment.centerLeft,
                   child: Text(
@@ -754,7 +761,6 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
                   ),
                 ),
                 const SizedBox(height: 12),
-
                 _field("Name Surname", _name, TextInputType.text),
                 const SizedBox(height: 10),
                 Row(
@@ -788,9 +794,7 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
                     ),
                   ],
                 ),
-
                 const SizedBox(height: 14),
-
                 Row(
                   children: [
                     Expanded(
@@ -819,6 +823,7 @@ class _EditProfileSheetState extends State<_EditProfileSheet> {
     );
   }
 
+  // reusable text field
   Widget _field(
     String label,
     TextEditingController c,
